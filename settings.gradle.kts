@@ -26,3 +26,4 @@ include(":core:ui")
 include(":core:database")
 
 include(":feature:quran")
+include(":feature:prayer")

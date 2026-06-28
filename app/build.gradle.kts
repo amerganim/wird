@@ -32,6 +32,7 @@ dependencies {
     implementation(project(":core:database"))
 
     implementation(project(":feature:quran"))
+    implementation(project(":feature:prayer"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
