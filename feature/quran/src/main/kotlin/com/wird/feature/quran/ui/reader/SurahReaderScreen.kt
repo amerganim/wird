@@ -1,7 +1,9 @@
 package com.wird.feature.quran.ui.reader
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.FormatSize
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -233,17 +237,36 @@ private fun AyahRow(
     isBookmarked: Boolean,
     onToggleBookmark: () -> Unit,
 ) {
+    val context = LocalContext.current
     Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-        IconButton(onClick = onToggleBookmark, modifier = Modifier.align(Alignment.Start)) {
-            Icon(
-                imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark ayah",
-                tint = if (isBookmarked) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
+        Row(modifier = Modifier.align(Alignment.Start)) {
+            IconButton(onClick = onToggleBookmark) {
+                Icon(
+                    imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                    contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark ayah",
+                    tint = if (isBookmarked) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            }
+            IconButton(
+                onClick = {
+                    val text = "${ayah.textUthmani}\n\n— Qur'an ${ayah.surahNo}:${ayah.ayahNo}\nShared via Wird"
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+                    context.startActivity(Intent.createChooser(send, null))
                 },
-            )
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = "Share ayah",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         Text(
             text = "${ayah.textUthmani} $END_OF_AYAH${ayah.ayahNo.toArabicIndic()}",
