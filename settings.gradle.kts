@@ -27,3 +27,4 @@ include(":core:database")
 
 include(":feature:quran")
 include(":feature:prayer")
+include(":feature:alarm")

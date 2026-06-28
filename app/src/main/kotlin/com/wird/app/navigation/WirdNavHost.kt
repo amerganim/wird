@@ -2,6 +2,7 @@ package com.wird.app.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Mosque
 import androidx.compose.material3.Icon
@@ -21,6 +22,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.wird.feature.alarm.navigation.AlarmDestinations
+import com.wird.feature.alarm.ui.AlarmRoute
 import com.wird.feature.prayer.navigation.PrayerDestinations
 import com.wird.feature.prayer.ui.PrayerRoute
 import com.wird.feature.quran.navigation.QuranDestinations
@@ -35,6 +38,7 @@ private enum class TopLevelDestination(
 ) {
     QURAN(QuranDestinations.SURAH_LIST_ROUTE, "Quran", Icons.Outlined.MenuBook),
     PRAYER(PrayerDestinations.ROUTE, "Prayer", Icons.Outlined.Mosque),
+    ALARM(AlarmDestinations.ROUTE, "Alarm", Icons.Outlined.Alarm),
 }
 
 @Composable
@@ -112,6 +116,9 @@ fun WirdApp() {
             }
             composable(PrayerDestinations.ROUTE) {
                 PrayerRoute()
+            }
+            composable(AlarmDestinations.ROUTE) {
+                AlarmRoute()
             }
         }
     }
