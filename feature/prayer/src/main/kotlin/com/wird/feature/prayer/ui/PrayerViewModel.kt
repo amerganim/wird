@@ -7,6 +7,7 @@ import com.batoulapps.adhan2.Coordinates
 import com.batoulapps.adhan2.Madhab
 import com.batoulapps.adhan2.PrayerTimes
 import com.batoulapps.adhan2.data.DateComponents
+import com.wird.feature.prayer.data.City
 import com.wird.feature.prayer.data.PrayerPrefs
 import com.wird.feature.prayer.data.PrayerSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,13 +37,21 @@ class PrayerViewModel @Inject constructor(
     private val settings: PrayerSettings,
 ) : ViewModel() {
 
-    // First slice: a fixed default location. A location/city picker comes next.
     val uiState: StateFlow<PrayerUiState> = settings.prefs
         .map { computeToday(it) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = computeToday(PrayerPrefs(CalculationMethod.KARACHI, Madhab.HANAFI)),
+            initialValue = computeToday(
+                PrayerPrefs(
+                    method = CalculationMethod.KARACHI,
+                    madhab = Madhab.HANAFI,
+                    cityName = "Dhaka",
+                    latitude = DEFAULT_LAT,
+                    longitude = DEFAULT_LNG,
+                    timeZone = DEFAULT_TZ,
+                ),
+            ),
         )
 
     fun setMethod(method: CalculationMethod) {
@@ -53,11 +62,16 @@ class PrayerViewModel @Inject constructor(
         viewModelScope.launch { settings.setMadhab(madhab) }
     }
 
+    fun setCity(city: City) {
+        viewModelScope.launch { settings.setCity(city) }
+    }
+
     private fun computeToday(prefs: PrayerPrefs): PrayerUiState {
-        val tz = TimeZone.currentSystemDefault()
+        val tz = runCatching { TimeZone.of(prefs.timeZone) }
+            .getOrDefault(TimeZone.currentSystemDefault())
         val today = Clock.System.now().toLocalDateTime(tz).date
 
-        val coordinates = Coordinates(DEFAULT_LAT, DEFAULT_LNG)
+        val coordinates = Coordinates(prefs.latitude, prefs.longitude)
         val params = prefs.method.parameters.copy(madhab = prefs.madhab)
         val date = DateComponents(today.year, today.monthNumber, today.dayOfMonth)
         val pt = PrayerTimes(coordinates, date, params)
@@ -71,7 +85,7 @@ class PrayerViewModel @Inject constructor(
 
         val month = today.month.name.lowercase().replaceFirstChar { it.uppercase() }
         return PrayerUiState(
-            locationName = "Dhaka",
+            locationName = prefs.cityName,
             dateLabel = "${today.dayOfMonth} $month ${today.year}",
             method = prefs.method,
             madhab = prefs.madhab,
@@ -89,5 +103,6 @@ class PrayerViewModel @Inject constructor(
     companion object {
         private const val DEFAULT_LAT = 23.8103
         private const val DEFAULT_LNG = 90.4125
+        private const val DEFAULT_TZ = "Asia/Dhaka"
     }
 }

@@ -1,0 +1,106 @@
+package com.wird.feature.prayer.data
+
+data class City(
+    val name: String,
+    val country: String,
+    val latitude: Double,
+    val longitude: Double,
+    val timeZone: String,
+)
+
+/**
+ * Bundled offline city list for manual location selection (works with no GPS /
+ * no network). Each city carries its IANA time zone so prayer times display in
+ * that city's local time. Not exhaustive — device-location comes later.
+ */
+val CITIES: List<City> = listOf(
+    // Bangladesh
+    City("Dhaka", "Bangladesh", 23.8103, 90.4125, "Asia/Dhaka"),
+    City("Chittagong", "Bangladesh", 22.3569, 91.7832, "Asia/Dhaka"),
+    City("Khulna", "Bangladesh", 22.8456, 89.5403, "Asia/Dhaka"),
+    City("Rajshahi", "Bangladesh", 24.3636, 88.6241, "Asia/Dhaka"),
+    City("Sylhet", "Bangladesh", 24.8949, 91.8687, "Asia/Dhaka"),
+    City("Barishal", "Bangladesh", 22.7010, 90.3535, "Asia/Dhaka"),
+    City("Rangpur", "Bangladesh", 25.7439, 89.2752, "Asia/Dhaka"),
+    City("Mymensingh", "Bangladesh", 24.7471, 90.4203, "Asia/Dhaka"),
+    City("Comilla", "Bangladesh", 23.4607, 91.1809, "Asia/Dhaka"),
+    City("Narayanganj", "Bangladesh", 23.6238, 90.5000, "Asia/Dhaka"),
+    // South Asia
+    City("Karachi", "Pakistan", 24.8607, 67.0011, "Asia/Karachi"),
+    City("Lahore", "Pakistan", 31.5204, 74.3587, "Asia/Karachi"),
+    City("Islamabad", "Pakistan", 33.6844, 73.0479, "Asia/Karachi"),
+    City("Delhi", "India", 28.7041, 77.1025, "Asia/Kolkata"),
+    City("Mumbai", "India", 19.0760, 72.8777, "Asia/Kolkata"),
+    City("Kolkata", "India", 22.5726, 88.3639, "Asia/Kolkata"),
+    City("Hyderabad", "India", 17.3850, 78.4867, "Asia/Kolkata"),
+    City("Chennai", "India", 13.0827, 80.2707, "Asia/Kolkata"),
+    City("Bengaluru", "India", 12.9716, 77.5946, "Asia/Kolkata"),
+    City("Colombo", "Sri Lanka", 6.9271, 79.8612, "Asia/Colombo"),
+    City("Kathmandu", "Nepal", 27.7172, 85.3240, "Asia/Kathmandu"),
+    City("Kabul", "Afghanistan", 34.5553, 69.2075, "Asia/Kabul"),
+    // Middle East
+    City("Mecca", "Saudi Arabia", 21.4225, 39.8262, "Asia/Riyadh"),
+    City("Medina", "Saudi Arabia", 24.5247, 39.5692, "Asia/Riyadh"),
+    City("Riyadh", "Saudi Arabia", 24.7136, 46.6753, "Asia/Riyadh"),
+    City("Jeddah", "Saudi Arabia", 21.4858, 39.1925, "Asia/Riyadh"),
+    City("Dubai", "UAE", 25.2048, 55.2708, "Asia/Dubai"),
+    City("Abu Dhabi", "UAE", 24.4539, 54.3773, "Asia/Dubai"),
+    City("Doha", "Qatar", 25.2854, 51.5310, "Asia/Qatar"),
+    City("Kuwait City", "Kuwait", 29.3759, 47.9774, "Asia/Kuwait"),
+    City("Manama", "Bahrain", 26.2285, 50.5860, "Asia/Bahrain"),
+    City("Muscat", "Oman", 23.5880, 58.3829, "Asia/Muscat"),
+    City("Baghdad", "Iraq", 33.3152, 44.3661, "Asia/Baghdad"),
+    City("Amman", "Jordan", 31.9454, 35.9284, "Asia/Amman"),
+    City("Jerusalem", "Palestine", 31.7683, 35.2137, "Asia/Jerusalem"),
+    City("Beirut", "Lebanon", 33.8938, 35.5018, "Asia/Beirut"),
+    City("Damascus", "Syria", 33.5138, 36.2765, "Asia/Damascus"),
+    City("Sanaa", "Yemen", 15.3694, 44.1910, "Asia/Aden"),
+    City("Tehran", "Iran", 35.6892, 51.3890, "Asia/Tehran"),
+    City("Istanbul", "Turkey", 41.0082, 28.9784, "Europe/Istanbul"),
+    City("Ankara", "Turkey", 39.9334, 32.8597, "Europe/Istanbul"),
+    // Egypt & Africa
+    City("Cairo", "Egypt", 30.0444, 31.2357, "Africa/Cairo"),
+    City("Alexandria", "Egypt", 31.2001, 29.9187, "Africa/Cairo"),
+    City("Khartoum", "Sudan", 15.5007, 32.5599, "Africa/Khartoum"),
+    City("Lagos", "Nigeria", 6.5244, 3.3792, "Africa/Lagos"),
+    City("Kano", "Nigeria", 12.0022, 8.5920, "Africa/Lagos"),
+    City("Nairobi", "Kenya", -1.2921, 36.8219, "Africa/Nairobi"),
+    City("Casablanca", "Morocco", 33.5731, -7.5898, "Africa/Casablanca"),
+    City("Tunis", "Tunisia", 36.8065, 10.1815, "Africa/Tunis"),
+    City("Algiers", "Algeria", 36.7538, 3.0588, "Africa/Algiers"),
+    City("Dakar", "Senegal", 14.7167, -17.4677, "Africa/Dakar"),
+    // SE & East Asia
+    City("Kuala Lumpur", "Malaysia", 3.1390, 101.6869, "Asia/Kuala_Lumpur"),
+    City("Singapore", "Singapore", 1.3521, 103.8198, "Asia/Singapore"),
+    City("Jakarta", "Indonesia", -6.2088, 106.8456, "Asia/Jakarta"),
+    City("Surabaya", "Indonesia", -7.2575, 112.7521, "Asia/Jakarta"),
+    City("Manila", "Philippines", 14.5995, 120.9842, "Asia/Manila"),
+    City("Bangkok", "Thailand", 13.7563, 100.5018, "Asia/Bangkok"),
+    City("Beijing", "China", 39.9042, 116.4074, "Asia/Shanghai"),
+    City("Tokyo", "Japan", 35.6762, 139.6503, "Asia/Tokyo"),
+    City("Seoul", "South Korea", 37.5665, 126.9780, "Asia/Seoul"),
+    // Central Asia
+    City("Tashkent", "Uzbekistan", 41.2995, 69.2401, "Asia/Tashkent"),
+    City("Almaty", "Kazakhstan", 43.2220, 76.8512, "Asia/Almaty"),
+    City("Baku", "Azerbaijan", 40.4093, 49.8671, "Asia/Baku"),
+    // Europe
+    City("London", "UK", 51.5074, -0.1278, "Europe/London"),
+    City("Birmingham", "UK", 52.4862, -1.8904, "Europe/London"),
+    City("Manchester", "UK", 53.4808, -2.2426, "Europe/London"),
+    City("Paris", "France", 48.8566, 2.3522, "Europe/Paris"),
+    City("Berlin", "Germany", 52.5200, 13.4050, "Europe/Berlin"),
+    City("Amsterdam", "Netherlands", 52.3676, 4.9041, "Europe/Amsterdam"),
+    City("Brussels", "Belgium", 50.8503, 4.3517, "Europe/Brussels"),
+    City("Rome", "Italy", 41.9028, 12.4964, "Europe/Rome"),
+    City("Madrid", "Spain", 40.4168, -3.7038, "Europe/Madrid"),
+    City("Stockholm", "Sweden", 59.3293, 18.0686, "Europe/Stockholm"),
+    City("Moscow", "Russia", 55.7558, 37.6173, "Europe/Moscow"),
+    // Americas & Oceania
+    City("New York", "USA", 40.7128, -74.0060, "America/New_York"),
+    City("Chicago", "USA", 41.8781, -87.6298, "America/Chicago"),
+    City("Los Angeles", "USA", 34.0522, -118.2437, "America/Los_Angeles"),
+    City("Houston", "USA", 29.7604, -95.3698, "America/Chicago"),
+    City("Toronto", "Canada", 43.6532, -79.3832, "America/Toronto"),
+    City("Sydney", "Australia", -33.8688, 151.2093, "Australia/Sydney"),
+    City("Melbourne", "Australia", -37.8136, 144.9631, "Australia/Melbourne"),
+).sortedBy { it.name }

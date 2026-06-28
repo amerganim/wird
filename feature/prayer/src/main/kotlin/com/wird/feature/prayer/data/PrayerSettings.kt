@@ -1,6 +1,7 @@
 package com.wird.feature.prayer.data
 
 import android.content.Context
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -17,6 +18,10 @@ private val Context.prayerDataStore by preferencesDataStore(name = "prayer_setti
 data class PrayerPrefs(
     val method: CalculationMethod,
     val madhab: Madhab,
+    val cityName: String,
+    val latitude: Double,
+    val longitude: Double,
+    val timeZone: String,
 )
 
 /** Persistent prayer-calculation preferences. */
@@ -27,12 +32,20 @@ class PrayerSettings @Inject constructor(
     private object Keys {
         val METHOD = stringPreferencesKey("calculation_method")
         val MADHAB = stringPreferencesKey("madhab")
+        val CITY = stringPreferencesKey("city_name")
+        val LAT = doublePreferencesKey("latitude")
+        val LNG = doublePreferencesKey("longitude")
+        val TZ = stringPreferencesKey("time_zone")
     }
 
     val prefs: Flow<PrayerPrefs> = context.prayerDataStore.data.map { p ->
         PrayerPrefs(
             method = p[Keys.METHOD]?.toMethod() ?: CalculationMethod.KARACHI,
             madhab = p[Keys.MADHAB]?.toMadhab() ?: Madhab.HANAFI,
+            cityName = p[Keys.CITY] ?: DEFAULT_CITY.name,
+            latitude = p[Keys.LAT] ?: DEFAULT_CITY.latitude,
+            longitude = p[Keys.LNG] ?: DEFAULT_CITY.longitude,
+            timeZone = p[Keys.TZ] ?: DEFAULT_CITY.timeZone,
         )
     }
 
@@ -44,9 +57,22 @@ class PrayerSettings @Inject constructor(
         context.prayerDataStore.edit { it[Keys.MADHAB] = madhab.name }
     }
 
+    suspend fun setCity(city: City) {
+        context.prayerDataStore.edit {
+            it[Keys.CITY] = city.name
+            it[Keys.LAT] = city.latitude
+            it[Keys.LNG] = city.longitude
+            it[Keys.TZ] = city.timeZone
+        }
+    }
+
     private fun String.toMethod(): CalculationMethod =
         runCatching { CalculationMethod.valueOf(this) }.getOrDefault(CalculationMethod.KARACHI)
 
     private fun String.toMadhab(): Madhab =
         runCatching { Madhab.valueOf(this) }.getOrDefault(Madhab.HANAFI)
+
+    private companion object {
+        val DEFAULT_CITY = City("Dhaka", "Bangladesh", 23.8103, 90.4125, "Asia/Dhaka")
+    }
 }
