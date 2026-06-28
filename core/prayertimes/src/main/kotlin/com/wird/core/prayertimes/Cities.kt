@@ -1,4 +1,4 @@
-package com.wird.feature.prayer.data
+package com.wird.core.prayertimes
 
 data class City(
     val name: String,

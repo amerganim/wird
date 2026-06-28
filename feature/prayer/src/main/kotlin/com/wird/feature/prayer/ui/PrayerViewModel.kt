@@ -7,9 +7,9 @@ import com.batoulapps.adhan2.Coordinates
 import com.batoulapps.adhan2.Madhab
 import com.batoulapps.adhan2.PrayerTimes
 import com.batoulapps.adhan2.data.DateComponents
-import com.wird.feature.prayer.data.City
-import com.wird.feature.prayer.data.PrayerPrefs
-import com.wird.feature.prayer.data.PrayerSettings
+import com.wird.core.prayertimes.City
+import com.wird.core.prayertimes.PrayerPrefs
+import com.wird.core.prayertimes.PrayerSettings
 import com.wird.feature.prayer.notification.PrayerAlarmScheduler
 import com.wird.feature.prayer.notification.PrayerNotifier
 import dagger.hilt.android.lifecycle.HiltViewModel

@@ -55,8 +55,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.batoulapps.adhan2.CalculationMethod
 import com.batoulapps.adhan2.Madhab
-import com.wird.feature.prayer.data.CITIES
-import com.wird.feature.prayer.data.City
+import com.wird.core.prayertimes.CITIES
+import com.wird.core.prayertimes.City
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 

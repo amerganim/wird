@@ -3,7 +3,7 @@ package com.wird.feature.prayer.notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.wird.feature.prayer.data.PrayerSettings
+import com.wird.core.prayertimes.PrayerSettings
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

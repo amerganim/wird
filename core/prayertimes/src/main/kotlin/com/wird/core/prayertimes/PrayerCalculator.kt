@@ -1,4 +1,4 @@
-package com.wird.feature.prayer.data
+package com.wird.core.prayertimes
 
 import com.batoulapps.adhan2.Coordinates
 import com.batoulapps.adhan2.PrayerTimes

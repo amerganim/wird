@@ -24,6 +24,7 @@ include(":app")
 include(":core:common")
 include(":core:ui")
 include(":core:database")
+include(":core:prayertimes")
 
 include(":feature:quran")
 include(":feature:prayer")

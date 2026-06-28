@@ -5,8 +5,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import com.wird.feature.alarm.data.AlarmPrefs
-import com.wird.feature.prayer.data.PrayerCalculator
-import com.wird.feature.prayer.data.PrayerSettings
+import com.wird.core.prayertimes.PrayerCalculator
+import com.wird.core.prayertimes.PrayerSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock

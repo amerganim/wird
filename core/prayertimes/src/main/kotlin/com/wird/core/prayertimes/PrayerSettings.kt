@@ -1,4 +1,4 @@
-package com.wird.feature.prayer.data
+package com.wird.core.prayertimes
 
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
