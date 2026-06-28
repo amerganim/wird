@@ -4,7 +4,12 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import com.wird.feature.alarm.data.AlarmPrefs
+import com.wird.feature.prayer.data.PrayerCalculator
+import com.wird.feature.prayer.data.PrayerSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
+import kotlinx.datetime.Clock
 import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -14,8 +19,21 @@ import javax.inject.Singleton
 @Singleton
 class AlarmScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val prayerSettings: PrayerSettings,
 ) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
+
+    /** Schedules according to the alarm prefs: the computed next Fajr, or the
+     *  fixed daily time. */
+    suspend fun scheduleFor(prefs: AlarmPrefs) {
+        if (prefs.useFajrTime) {
+            val prayerPrefs = prayerSettings.prefs.first()
+            val fajr = PrayerCalculator.nextFajrAfter(prayerPrefs, Clock.System.now())
+            scheduleAt(fajr.toEpochMilliseconds(), "Fajr")
+        } else {
+            scheduleDaily(prefs.hour, prefs.minute, "Fajr")
+        }
+    }
 
     /** Next future occurrence of [hour]:[minute] (today if still ahead, else tomorrow). */
     fun scheduleDaily(hour: Int, minute: Int, label: String) {

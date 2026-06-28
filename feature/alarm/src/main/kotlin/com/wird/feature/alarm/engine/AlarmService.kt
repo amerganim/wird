@@ -56,10 +56,10 @@ class AlarmService : Service() {
         startVibration()
         launchAlarmScreen(label)
 
-        // Re-arm tomorrow's alarm so it repeats daily.
+        // Re-arm the next alarm (next Fajr or tomorrow's fixed time).
         scope.launch {
             val prefs = settings.prefs.first()
-            if (prefs.enabled) scheduler.scheduleDaily(prefs.hour, prefs.minute, label)
+            if (prefs.enabled) scheduler.scheduleFor(prefs)
         }
         return START_STICKY
     }

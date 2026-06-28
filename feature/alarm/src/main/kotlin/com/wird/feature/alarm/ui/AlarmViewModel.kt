@@ -28,15 +28,15 @@ class AlarmViewModel @Inject constructor(
             hour = AlarmSettings.DEFAULT_HOUR,
             minute = AlarmSettings.DEFAULT_MINUTE,
             dismissTask = DismissTask.MATH,
+            useFajrTime = false,
         ),
     )
 
     fun setEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settings.setEnabled(enabled)
-            val prefs = settings.prefs.first()
             if (enabled) {
-                scheduler.scheduleDaily(prefs.hour, prefs.minute, LABEL)
+                scheduler.scheduleFor(settings.prefs.first())
             } else {
                 scheduler.cancel()
             }
@@ -46,14 +46,24 @@ class AlarmViewModel @Inject constructor(
     fun setTime(hour: Int, minute: Int) {
         viewModelScope.launch {
             settings.setTime(hour, minute)
-            if (settings.prefs.first().enabled) {
-                scheduler.scheduleDaily(hour, minute, LABEL)
-            }
+            rescheduleIfEnabled()
         }
     }
 
     fun setDismissTask(task: DismissTask) {
         viewModelScope.launch { settings.setDismissTask(task) }
+    }
+
+    fun setUseFajrTime(useFajr: Boolean) {
+        viewModelScope.launch {
+            settings.setUseFajrTime(useFajr)
+            rescheduleIfEnabled()
+        }
+    }
+
+    private suspend fun rescheduleIfEnabled() {
+        val prefs = settings.prefs.first()
+        if (prefs.enabled) scheduler.scheduleFor(prefs)
     }
 
     fun testAlarm() {

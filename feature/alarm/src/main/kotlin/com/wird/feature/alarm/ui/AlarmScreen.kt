@@ -50,6 +50,7 @@ fun AlarmRoute(viewModel: AlarmViewModel = hiltViewModel()) {
         onEnabledChange = viewModel::setEnabled,
         onTimeChange = viewModel::setTime,
         onDismissTaskChange = viewModel::setDismissTask,
+        onUseFajrTimeChange = viewModel::setUseFajrTime,
         onTest = viewModel::testAlarm,
     )
 }
@@ -61,6 +62,7 @@ fun AlarmScreen(
     onEnabledChange: (Boolean) -> Unit,
     onTimeChange: (Int, Int) -> Unit,
     onDismissTaskChange: (DismissTask) -> Unit,
+    onUseFajrTimeChange: (Boolean) -> Unit,
     onTest: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -79,20 +81,44 @@ fun AlarmScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = formatTime(prefs.hour, prefs.minute),
-                fontSize = 64.sp,
-                modifier = Modifier
-                    .clickable { showTimePicker = true }
-                    .padding(8.dp),
-            )
-            Text(
-                text = "Tap the time to change it",
-                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (prefs.useFajrTime) {
+                Text(
+                    text = "Fajr",
+                    fontSize = 64.sp,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(8.dp),
+                )
+                Text(
+                    text = "Auto — follows your daily Fajr time",
+                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Text(
+                    text = formatTime(prefs.hour, prefs.minute),
+                    fontSize = 64.sp,
+                    modifier = Modifier
+                        .clickable { showTimePicker = true }
+                        .padding(8.dp),
+                )
+                Text(
+                    text = "Tap the time to change it",
+                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("Use Fajr time", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+                Switch(checked = prefs.useFajrTime, onCheckedChange = onUseFajrTimeChange)
+            }
+
+            Spacer(Modifier.height(8.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -24,6 +24,19 @@ object PrayerCalculator {
         return candidates.first { it.instant > from }
     }
 
+    /** The next Fajr strictly after [from] (today's if still ahead, else tomorrow's). */
+    fun nextFajrAfter(prefs: PrayerPrefs, from: Instant): Instant {
+        val tz = runCatching { TimeZone.of(prefs.timeZone) }
+            .getOrDefault(TimeZone.currentSystemDefault())
+        val today = from.toLocalDateTime(tz).date
+        val todayFajr = dailyPrayers(prefs, today).first { it.prayer == "Fajr" }.instant
+        return if (todayFajr > from) {
+            todayFajr
+        } else {
+            dailyPrayers(prefs, today.plus(DatePeriod(days = 1))).first { it.prayer == "Fajr" }.instant
+        }
+    }
+
     private fun dailyPrayers(prefs: PrayerPrefs, date: LocalDate): List<Timing> {
         val coordinates = Coordinates(prefs.latitude, prefs.longitude)
         val params = prefs.method.parameters.copy(madhab = prefs.madhab)
