@@ -8,9 +8,10 @@ import com.wird.feature.quran.navigation.QuranDestinations
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,35 +24,39 @@ class SurahReaderViewModel @Inject constructor(
 
     private val surahNo: Int = checkNotNull(savedStateHandle[QuranDestinations.SURAH_NO_ARG])
 
-    val uiState: StateFlow<ReaderUiState> =
-        combine(
-            flow { emit(repository.getSurah(surahNo)) },
-            repository.observeAyahs(surahNo),
-        ) { surah, ayahs ->
-            if (surah == null) {
-                ReaderUiState.Loading
-            } else {
+    val uiState: StateFlow<ReaderUiState> = flow {
+        repository.ensureSeeded()
+        val surah = repository.getSurah(surahNo)
+        if (surah == null) {
+            emit(ReaderUiState.Loading)
+            return@flow
+        }
+        // Resolve the saved resume point once — only restore if it's in this surah.
+        val saved = repository.observeLastPosition().first()?.ayahId
+        val restoreTo = saved?.takeIf { repository.getAyah(it)?.surahNo == surahNo }
+
+        emitAll(
+            repository.observeAyahs(surahNo).map { ayahs ->
                 val items = buildList {
                     if (shouldShowBismillah(surah.number, ayahNo = 1)) {
                         add(ReaderItem.Bismillah(surah.number))
                     }
                     ayahs.forEach { add(ReaderItem.AyahLine(it)) }
                 }
-                ReaderUiState.Content(title = surah.nameTranslit, items = items)
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = ReaderUiState.Loading,
+                ReaderUiState.Content(
+                    title = surah.nameTranslit,
+                    items = items,
+                    restoreToAyahId = restoreTo,
+                )
+            },
         )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ReaderUiState.Loading,
+    )
 
-    init {
-        // Mark this surah as the resume point (top of surah for now).
-        viewModelScope.launch {
-            repository.ensureSeeded()
-            repository.observeAyahs(surahNo).first().firstOrNull()?.let {
-                repository.saveLastPosition(it.id)
-            }
-        }
+    fun onVisibleAyahChanged(ayahId: Int) {
+        viewModelScope.launch { repository.saveLastPosition(ayahId) }
     }
 }

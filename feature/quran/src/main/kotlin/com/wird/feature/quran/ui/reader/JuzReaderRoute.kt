@@ -11,5 +11,5 @@ fun JuzReaderRoute(
     viewModel: JuzReaderViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    ReaderScreen(uiState = uiState, onBack = onBack)
+    ReaderScreen(uiState = uiState, onBack = onBack, onVisibleAyah = viewModel::onVisibleAyahChanged)
 }

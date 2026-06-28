@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
@@ -21,7 +22,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -35,6 +41,9 @@ import com.wird.core.database.entity.AyahEntity
 import com.wird.core.database.entity.SurahEntity
 import com.wird.core.ui.theme.ArabicAyahTextStyle
 import com.wird.feature.quran.ui.toArabicIndic
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.map
 
 // End-of-ayah ornament (U+06DD) followed by the ayah number in Arabic-Indic digits.
 private const val END_OF_AYAH = '۝'
@@ -45,6 +54,7 @@ sealed interface ReaderUiState {
     data class Content(
         val title: String,
         val items: List<ReaderItem>,
+        val restoreToAyahId: Int? = null,
     ) : ReaderUiState
 }
 
@@ -54,7 +64,7 @@ fun SurahReaderRoute(
     viewModel: SurahReaderViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    ReaderScreen(uiState = uiState, onBack = onBack)
+    ReaderScreen(uiState = uiState, onBack = onBack, onVisibleAyah = viewModel::onVisibleAyahChanged)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,6 +72,7 @@ fun SurahReaderRoute(
 fun ReaderScreen(
     uiState: ReaderUiState,
     onBack: () -> Unit,
+    onVisibleAyah: (Int) -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -95,7 +106,32 @@ fun ReaderScreen(
             is ReaderUiState.Content -> CompositionLocalProvider(
                 LocalLayoutDirection provides LayoutDirection.Rtl,
             ) {
+                val listState = rememberLazyListState()
+                var restored by rememberSaveable { mutableStateOf(false) }
+
+                // Restore once to the saved ayah for this surah/juz.
+                LaunchedEffect(uiState.items, uiState.restoreToAyahId) {
+                    if (!restored && uiState.restoreToAyahId != null && uiState.items.isNotEmpty()) {
+                        val index = uiState.items.indexOfFirst {
+                            it is ReaderItem.AyahLine && it.ayah.id == uiState.restoreToAyahId
+                        }
+                        if (index >= 0) listState.scrollToItem(index)
+                        restored = true
+                    }
+                }
+
+                // Persist the top-most visible ayah as the resume point.
+                LaunchedEffect(uiState.items) {
+                    snapshotFlow { listState.firstVisibleItemIndex }
+                        .map { uiState.items.getOrNull(it) }
+                        .filterIsInstance<ReaderItem.AyahLine>()
+                        .map { it.ayah.id }
+                        .distinctUntilChanged()
+                        .collect(onVisibleAyah)
+                }
+
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
