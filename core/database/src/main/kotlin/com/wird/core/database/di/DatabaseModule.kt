@@ -3,7 +3,9 @@ package com.wird.core.database.di
 import android.content.Context
 import androidx.room.Room
 import com.wird.core.database.WirdDatabase
+import com.wird.core.database.dao.AyahDao
 import com.wird.core.database.dao.LastPositionDao
+import com.wird.core.database.dao.SurahDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,9 +26,16 @@ object DatabaseModule {
         WirdDatabase::class.java,
         WirdDatabase.DATABASE_NAME,
     )
-        // The reader slice will switch this to .createFromAsset("database/wird.db")
-        // once the prepackaged Quran content database is built (DEV_PLAN.md §1).
+        // Quran content is seeded from bundled assets (QuranSeeder), so the DB
+        // can always be rebuilt — destructive migration is safe pre-release.
+        .fallbackToDestructiveMigration()
         .build()
+
+    @Provides
+    fun provideSurahDao(database: WirdDatabase): SurahDao = database.surahDao()
+
+    @Provides
+    fun provideAyahDao(database: WirdDatabase): AyahDao = database.ayahDao()
 
     @Provides
     fun provideLastPositionDao(database: WirdDatabase): LastPositionDao =

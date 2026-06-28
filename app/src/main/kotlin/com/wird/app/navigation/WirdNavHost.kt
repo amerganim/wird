@@ -1,29 +1,37 @@
 package com.wird.app.navigation
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.wird.feature.quran.QuranScreen
-
-private const val QURAN_ROUTE = "quran"
+import androidx.navigation.navArgument
+import com.wird.feature.quran.navigation.QuranDestinations
+import com.wird.feature.quran.ui.list.SurahListRoute
+import com.wird.feature.quran.ui.reader.SurahReaderRoute
 
 @Composable
 fun WirdApp() {
     val navController = rememberNavController()
 
-    // Single feature for now (the Quran reader). A bottom-nav bar and the other
-    // top-level destinations return as their feature modules are reintroduced.
-    Scaffold { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = QURAN_ROUTE,
-            modifier = Modifier.padding(innerPadding),
+    NavHost(
+        navController = navController,
+        startDestination = QuranDestinations.SURAH_LIST_ROUTE,
+    ) {
+        composable(QuranDestinations.SURAH_LIST_ROUTE) {
+            SurahListRoute(
+                onSurahClick = { surahNo ->
+                    navController.navigate(QuranDestinations.readerRoute(surahNo))
+                },
+            )
+        }
+        composable(
+            route = QuranDestinations.READER_ROUTE,
+            arguments = listOf(
+                navArgument(QuranDestinations.SURAH_NO_ARG) { type = NavType.IntType },
+            ),
         ) {
-            composable(QURAN_ROUTE) { QuranScreen() }
+            SurahReaderRoute(onBack = { navController.popBackStack() })
         }
     }
 }

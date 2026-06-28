@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "com.wird.feature.quran"
 }
+
+dependencies {
+    implementation(project(":core:database"))
+}
