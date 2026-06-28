@@ -17,12 +17,19 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import javax.inject.Inject
 
-data class PrayerTimeRow(val name: String, val time: String)
+data class PrayerTimeRow(
+    val name: String,
+    val time: String,
+    val instant: Instant,
+    val isPrayer: Boolean,
+)
 
 data class PrayerUiState(
     val locationName: String,
@@ -30,6 +37,7 @@ data class PrayerUiState(
     val method: CalculationMethod,
     val madhab: Madhab,
     val times: List<PrayerTimeRow>,
+    val tomorrowFajr: Instant,
 )
 
 @HiltViewModel
@@ -76,12 +84,22 @@ class PrayerViewModel @Inject constructor(
         val date = DateComponents(today.year, today.monthNumber, today.dayOfMonth)
         val pt = PrayerTimes(coordinates, date, params)
 
+        val tomorrow = today.plus(DatePeriod(days = 1))
+        val ptTomorrow = PrayerTimes(
+            coordinates,
+            DateComponents(tomorrow.year, tomorrow.monthNumber, tomorrow.dayOfMonth),
+            params,
+        )
+
         fun fmt(instant: Instant): String {
             val t = instant.toLocalDateTime(tz)
             val hour12 = if (t.hour % 12 == 0) 12 else t.hour % 12
             val amPm = if (t.hour < 12) "AM" else "PM"
             return "%d:%02d %s".format(hour12, t.minute, amPm)
         }
+
+        fun row(name: String, instant: Instant, isPrayer: Boolean) =
+            PrayerTimeRow(name, fmt(instant), instant, isPrayer)
 
         val month = today.month.name.lowercase().replaceFirstChar { it.uppercase() }
         return PrayerUiState(
@@ -90,13 +108,14 @@ class PrayerViewModel @Inject constructor(
             method = prefs.method,
             madhab = prefs.madhab,
             times = listOf(
-                PrayerTimeRow("Fajr", fmt(pt.fajr)),
-                PrayerTimeRow("Sunrise", fmt(pt.sunrise)),
-                PrayerTimeRow("Dhuhr", fmt(pt.dhuhr)),
-                PrayerTimeRow("Asr", fmt(pt.asr)),
-                PrayerTimeRow("Maghrib", fmt(pt.maghrib)),
-                PrayerTimeRow("Isha", fmt(pt.isha)),
+                row("Fajr", pt.fajr, isPrayer = true),
+                row("Sunrise", pt.sunrise, isPrayer = false),
+                row("Dhuhr", pt.dhuhr, isPrayer = true),
+                row("Asr", pt.asr, isPrayer = true),
+                row("Maghrib", pt.maghrib, isPrayer = true),
+                row("Isha", pt.isha, isPrayer = true),
             ),
+            tomorrowFajr = ptTomorrow.fajr,
         )
     }
 

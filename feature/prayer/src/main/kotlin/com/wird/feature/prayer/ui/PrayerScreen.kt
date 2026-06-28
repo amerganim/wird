@@ -1,6 +1,7 @@
 package com.wird.feature.prayer.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,11 +19,13 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -31,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +49,8 @@ import com.batoulapps.adhan2.CalculationMethod
 import com.batoulapps.adhan2.Madhab
 import com.wird.feature.prayer.data.CITIES
 import com.wird.feature.prayer.data.City
+import kotlinx.coroutines.delay
+import kotlinx.datetime.Clock
 
 private val METHOD_OPTIONS = listOf(
     CalculationMethod.MUSLIM_WORLD_LEAGUE to "Muslim World League",
@@ -98,6 +104,24 @@ fun PrayerScreen(
             )
         },
     ) { innerPadding ->
+        // Tick once a second so the countdown stays live.
+        var now by remember { mutableStateOf(Clock.System.now()) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                now = Clock.System.now()
+                delay(1000)
+            }
+        }
+        val next = remember(uiState, now) {
+            uiState.times
+                .filter { it.isPrayer && it.instant > now }
+                .minByOrNull { it.instant }
+                ?.let { it.name to it.instant }
+                ?: ("Fajr" to uiState.tomorrowFajr)
+        }
+        val nextName = next.first
+        val nextInstant = next.second
+
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -113,9 +137,19 @@ fun PrayerScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(12.dp))
+
+            NextPrayerCard(name = nextName, countdown = countdownLabel(nextInstant - now))
+
             uiState.times.forEach { row ->
+                val isNext = row.isPrayer && row.instant == nextInstant
                 ListItem(
+                    colors = if (isNext) {
+                        ListItemDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        )
+                    } else {
+                        ListItemDefaults.colors()
+                    },
                     headlineContent = { Text(row.name) },
                     trailingContent = {
                         Text(row.time, style = MaterialTheme.typography.titleMedium)
@@ -192,6 +226,40 @@ private fun CityPickerSheet(
 
 private fun asrLabel(madhab: Madhab): String =
     if (madhab == Madhab.HANAFI) "Hanafi" else "Standard"
+
+private fun countdownLabel(remaining: kotlin.time.Duration): String {
+    val mins = remaining.inWholeMinutes.coerceAtLeast(0)
+    val h = mins / 60
+    val m = mins % 60
+    return if (h > 0) "in ${h}h ${m}m" else "in ${m}m"
+}
+
+@Composable
+private fun NextPrayerCard(name: String, countdown: String) {
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column {
+                Text(
+                    text = "Next prayer",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(name, style = MaterialTheme.typography.headlineSmall)
+            }
+            Text(countdown, style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
