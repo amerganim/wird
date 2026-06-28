@@ -4,14 +4,15 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wird.feature.quran.data.QuranRepository
+import com.wird.feature.quran.data.ReaderSettings
 import com.wird.feature.quran.navigation.QuranDestinations
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,6 +21,7 @@ import javax.inject.Inject
 class SurahReaderViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: QuranRepository,
+    private val readerSettings: ReaderSettings,
 ) : ViewModel() {
 
     private val surahNo: Int = checkNotNull(savedStateHandle[QuranDestinations.SURAH_NO_ARG])
@@ -36,7 +38,10 @@ class SurahReaderViewModel @Inject constructor(
         val restoreTo = saved?.takeIf { repository.getAyah(it)?.surahNo == surahNo }
 
         emitAll(
-            repository.observeAyahs(surahNo).map { ayahs ->
+            combine(
+                repository.observeAyahs(surahNo),
+                readerSettings.arabicFontSp,
+            ) { ayahs, fontSp ->
                 val items = buildList {
                     if (shouldShowBismillah(surah.number, ayahNo = 1)) {
                         add(ReaderItem.Bismillah(surah.number))
@@ -47,6 +52,7 @@ class SurahReaderViewModel @Inject constructor(
                     title = surah.nameTranslit,
                     items = items,
                     restoreToAyahId = restoreTo,
+                    arabicFontSp = fontSp,
                 )
             },
         )
@@ -58,5 +64,9 @@ class SurahReaderViewModel @Inject constructor(
 
     fun onVisibleAyahChanged(ayahId: Int) {
         viewModelScope.launch { repository.saveLastPosition(ayahId) }
+    }
+
+    fun onFontSizeChange(sp: Int) {
+        viewModelScope.launch { readerSettings.setArabicFontSp(sp) }
     }
 }
