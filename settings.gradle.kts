@@ -26,10 +26,3 @@ include(":core:ui")
 include(":core:database")
 
 include(":feature:quran")
-include(":feature:prayer")
-include(":feature:qibla")
-include(":feature:alarm")
-include(":feature:hifz")
-include(":feature:recitation")
-
-include(":data:audio")

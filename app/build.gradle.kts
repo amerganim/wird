@@ -32,9 +32,6 @@ dependencies {
     implementation(project(":core:database"))
 
     implementation(project(":feature:quran"))
-    implementation(project(":feature:prayer"))
-    implementation(project(":feature:qibla"))
-    implementation(project(":feature:hifz"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -42,7 +39,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
-    implementation(libs.androidx.compose.material.icons.extended)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
