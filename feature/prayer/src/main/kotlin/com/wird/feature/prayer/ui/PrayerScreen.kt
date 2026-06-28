@@ -1,5 +1,10 @@
 package com.wird.feature.prayer.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,6 +36,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -42,7 +48,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.batoulapps.adhan2.CalculationMethod
@@ -75,6 +83,7 @@ fun PrayerRoute(viewModel: PrayerViewModel = hiltViewModel()) {
         onMethodChange = viewModel::setMethod,
         onMadhabChange = viewModel::setMadhab,
         onCityChange = viewModel::setCity,
+        onNotificationsChange = viewModel::setNotificationsEnabled,
     )
 }
 
@@ -85,6 +94,7 @@ fun PrayerScreen(
     onMethodChange: (CalculationMethod) -> Unit,
     onMadhabChange: (Madhab) -> Unit,
     onCityChange: (City) -> Unit,
+    onNotificationsChange: (Boolean) -> Unit,
 ) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showCityPicker by rememberSaveable { mutableStateOf(false) }
@@ -163,8 +173,10 @@ fun PrayerScreen(
             SettingsSheet(
                 selectedMethod = uiState.method,
                 selectedMadhab = uiState.madhab,
+                notificationsEnabled = uiState.notificationsEnabled,
                 onMethodChange = onMethodChange,
                 onMadhabChange = onMadhabChange,
+                onNotificationsChange = onNotificationsChange,
                 onDismiss = { showSettings = false },
             )
         }
@@ -227,6 +239,13 @@ private fun CityPickerSheet(
 private fun asrLabel(madhab: Madhab): String =
     if (madhab == Madhab.HANAFI) "Hanafi" else "Standard"
 
+private fun needsNotificationPermission(context: android.content.Context): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) != PackageManager.PERMISSION_GRANTED
+
 private fun countdownLabel(remaining: kotlin.time.Duration): String {
     val mins = remaining.inWholeMinutes.coerceAtLeast(0)
     val h = mins / 60
@@ -266,11 +285,18 @@ private fun NextPrayerCard(name: String, countdown: String) {
 private fun SettingsSheet(
     selectedMethod: CalculationMethod,
     selectedMadhab: Madhab,
+    notificationsEnabled: Boolean,
     onMethodChange: (CalculationMethod) -> Unit,
     onMadhabChange: (Madhab) -> Unit,
+    onNotificationsChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> onNotificationsChange(granted) }
+
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
             Modifier
@@ -278,6 +304,27 @@ private fun SettingsSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 32.dp),
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("Prayer notifications", style = MaterialTheme.typography.titleMedium)
+                Switch(
+                    checked = notificationsEnabled,
+                    onCheckedChange = { checked ->
+                        if (checked && needsNotificationPermission(context)) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            onNotificationsChange(checked)
+                        }
+                    },
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+
             Text("Calculation method", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             METHOD_OPTIONS.forEach { (method, label) ->

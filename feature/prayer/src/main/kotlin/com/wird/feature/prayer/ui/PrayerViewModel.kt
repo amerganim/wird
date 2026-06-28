@@ -10,9 +10,12 @@ import com.batoulapps.adhan2.data.DateComponents
 import com.wird.feature.prayer.data.City
 import com.wird.feature.prayer.data.PrayerPrefs
 import com.wird.feature.prayer.data.PrayerSettings
+import com.wird.feature.prayer.notification.PrayerAlarmScheduler
+import com.wird.feature.prayer.notification.PrayerNotifier
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -38,11 +41,14 @@ data class PrayerUiState(
     val madhab: Madhab,
     val times: List<PrayerTimeRow>,
     val tomorrowFajr: Instant,
+    val notificationsEnabled: Boolean,
 )
 
 @HiltViewModel
 class PrayerViewModel @Inject constructor(
     private val settings: PrayerSettings,
+    private val scheduler: PrayerAlarmScheduler,
+    private val notifier: PrayerNotifier,
 ) : ViewModel() {
 
     val uiState: StateFlow<PrayerUiState> = settings.prefs
@@ -58,20 +64,46 @@ class PrayerViewModel @Inject constructor(
                     latitude = DEFAULT_LAT,
                     longitude = DEFAULT_LNG,
                     timeZone = DEFAULT_TZ,
+                    notificationsEnabled = false,
                 ),
             ),
         )
 
     fun setMethod(method: CalculationMethod) {
-        viewModelScope.launch { settings.setMethod(method) }
+        viewModelScope.launch {
+            settings.setMethod(method)
+            rescheduleIfEnabled()
+        }
     }
 
     fun setMadhab(madhab: Madhab) {
-        viewModelScope.launch { settings.setMadhab(madhab) }
+        viewModelScope.launch {
+            settings.setMadhab(madhab)
+            rescheduleIfEnabled()
+        }
     }
 
     fun setCity(city: City) {
-        viewModelScope.launch { settings.setCity(city) }
+        viewModelScope.launch {
+            settings.setCity(city)
+            rescheduleIfEnabled()
+        }
+    }
+
+    fun setNotificationsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settings.setNotificationsEnabled(enabled)
+            if (enabled) {
+                notifier.ensureChannel()
+                scheduler.scheduleNext()
+            } else {
+                scheduler.cancel()
+            }
+        }
+    }
+
+    private suspend fun rescheduleIfEnabled() {
+        if (settings.prefs.first().notificationsEnabled) scheduler.scheduleNext()
     }
 
     private fun computeToday(prefs: PrayerPrefs): PrayerUiState {
@@ -116,6 +148,7 @@ class PrayerViewModel @Inject constructor(
                 row("Isha", pt.isha, isPrayer = true),
             ),
             tomorrowFajr = ptTomorrow.fajr,
+            notificationsEnabled = prefs.notificationsEnabled,
         )
     }
 

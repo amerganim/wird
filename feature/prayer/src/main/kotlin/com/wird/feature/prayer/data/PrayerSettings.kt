@@ -1,6 +1,7 @@
 package com.wird.feature.prayer.data
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -22,6 +23,7 @@ data class PrayerPrefs(
     val latitude: Double,
     val longitude: Double,
     val timeZone: String,
+    val notificationsEnabled: Boolean,
 )
 
 /** Persistent prayer-calculation preferences. */
@@ -36,6 +38,7 @@ class PrayerSettings @Inject constructor(
         val LAT = doublePreferencesKey("latitude")
         val LNG = doublePreferencesKey("longitude")
         val TZ = stringPreferencesKey("time_zone")
+        val NOTIFS = booleanPreferencesKey("notifications_enabled")
     }
 
     val prefs: Flow<PrayerPrefs> = context.prayerDataStore.data.map { p ->
@@ -46,7 +49,12 @@ class PrayerSettings @Inject constructor(
             latitude = p[Keys.LAT] ?: DEFAULT_CITY.latitude,
             longitude = p[Keys.LNG] ?: DEFAULT_CITY.longitude,
             timeZone = p[Keys.TZ] ?: DEFAULT_CITY.timeZone,
+            notificationsEnabled = p[Keys.NOTIFS] ?: false,
         )
+    }
+
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        context.prayerDataStore.edit { it[Keys.NOTIFS] = enabled }
     }
 
     suspend fun setMethod(method: CalculationMethod) {

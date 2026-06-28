@@ -10,4 +10,5 @@ dependencies {
     implementation(libs.adhan2)
     implementation(libs.kotlinx.datetime)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.activity.compose)
 }
