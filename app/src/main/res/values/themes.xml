@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme. Colors are driven by Compose (WirdTheme); this
+         only provides a no-action-bar window for the Compose host Activity. -->
+    <style name="Theme.Wird" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
