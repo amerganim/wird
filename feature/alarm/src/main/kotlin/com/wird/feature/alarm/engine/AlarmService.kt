@@ -21,7 +21,9 @@ import com.wird.feature.alarm.data.AlarmSettings
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -36,6 +38,7 @@ class AlarmService : Service() {
     private var mediaPlayer: MediaPlayer? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var vibrator: Vibrator? = null
+    private var volumeJob: Job? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -103,8 +106,18 @@ class AlarmService : Service() {
                 )
                 setDataSource(this@AlarmService, uri)
                 isLooping = true
+                setVolume(INITIAL_VOLUME, INITIAL_VOLUME)
                 prepare()
                 start()
+            }
+            // Gradually rise to full volume over ~30s.
+            volumeJob = scope.launch {
+                var volume = INITIAL_VOLUME
+                while (volume < 1f) {
+                    delay(2_500)
+                    volume = (volume + 0.1f).coerceAtMost(1f)
+                    runCatching { mediaPlayer?.setVolume(volume, volume) }
+                }
             }
         }
     }
@@ -129,6 +142,7 @@ class AlarmService : Service() {
     }
 
     private fun stopAlarm() {
+        volumeJob?.cancel()
         runCatching { mediaPlayer?.stop() }
         mediaPlayer?.release()
         mediaPlayer = null
@@ -162,5 +176,6 @@ class AlarmService : Service() {
         const val ACTION_STOP = "com.wird.feature.alarm.STOP"
         private const val CHANNEL_ID = "wird_alarm"
         private const val NOTIFICATION_ID = 7310
+        private const val INITIAL_VOLUME = 0.2f
     }
 }

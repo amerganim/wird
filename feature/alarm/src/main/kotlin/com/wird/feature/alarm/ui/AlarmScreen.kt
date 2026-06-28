@@ -19,6 +19,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,6 +40,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wird.feature.alarm.data.AlarmPrefs
+import com.wird.feature.alarm.data.DismissTask
 
 @Composable
 fun AlarmRoute(viewModel: AlarmViewModel = hiltViewModel()) {
@@ -47,6 +49,7 @@ fun AlarmRoute(viewModel: AlarmViewModel = hiltViewModel()) {
         prefs = uiState,
         onEnabledChange = viewModel::setEnabled,
         onTimeChange = viewModel::setTime,
+        onDismissTaskChange = viewModel::setDismissTask,
         onTest = viewModel::testAlarm,
     )
 }
@@ -57,6 +60,7 @@ fun AlarmScreen(
     prefs: AlarmPrefs,
     onEnabledChange: (Boolean) -> Unit,
     onTimeChange: (Int, Int) -> Unit,
+    onDismissTaskChange: (DismissTask) -> Unit,
     onTest: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -117,7 +121,28 @@ fun AlarmScreen(
                 textAlign = TextAlign.Center,
             )
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text = "To dismiss the alarm you must:",
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            DismissTask.entries.forEach { task ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDismissTaskChange(task) },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = prefs.dismissTask == task,
+                        onClick = { onDismissTaskChange(task) },
+                    )
+                    Text(dismissTaskLabel(task))
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
             OutlinedButton(onClick = onTest) {
                 Text("Test alarm (rings in 5s)")
             }
@@ -144,6 +169,12 @@ fun AlarmScreen(
             text = { TimePicker(state = state) },
         )
     }
+}
+
+private fun dismissTaskLabel(task: DismissTask): String = when (task) {
+    DismissTask.NONE -> "Just tap dismiss"
+    DismissTask.MATH -> "Solve a math problem"
+    DismissTask.SHAKE -> "Shake the phone"
 }
 
 private fun formatTime(hour: Int, minute: Int): String {

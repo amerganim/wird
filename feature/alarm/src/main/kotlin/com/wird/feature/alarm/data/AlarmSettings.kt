@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +18,7 @@ data class AlarmPrefs(
     val enabled: Boolean,
     val hour: Int,
     val minute: Int,
+    val dismissTask: DismissTask,
 )
 
 @Singleton
@@ -27,6 +29,7 @@ class AlarmSettings @Inject constructor(
         val ENABLED = booleanPreferencesKey("enabled")
         val HOUR = intPreferencesKey("hour")
         val MINUTE = intPreferencesKey("minute")
+        val DISMISS = stringPreferencesKey("dismiss_task")
     }
 
     val prefs: Flow<AlarmPrefs> = context.alarmDataStore.data.map { p ->
@@ -34,6 +37,8 @@ class AlarmSettings @Inject constructor(
             enabled = p[Keys.ENABLED] ?: false,
             hour = p[Keys.HOUR] ?: DEFAULT_HOUR,
             minute = p[Keys.MINUTE] ?: DEFAULT_MINUTE,
+            dismissTask = p[Keys.DISMISS]?.let { runCatching { DismissTask.valueOf(it) }.getOrNull() }
+                ?: DismissTask.MATH,
         )
     }
 
@@ -46,6 +51,10 @@ class AlarmSettings @Inject constructor(
             it[Keys.HOUR] = hour
             it[Keys.MINUTE] = minute
         }
+    }
+
+    suspend fun setDismissTask(task: DismissTask) {
+        context.alarmDataStore.edit { it[Keys.DISMISS] = task.name }
     }
 
     companion object {

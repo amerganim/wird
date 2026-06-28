@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wird.feature.alarm.data.AlarmPrefs
 import com.wird.feature.alarm.data.AlarmSettings
+import com.wird.feature.alarm.data.DismissTask
 import com.wird.feature.alarm.engine.AlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +27,7 @@ class AlarmViewModel @Inject constructor(
             enabled = false,
             hour = AlarmSettings.DEFAULT_HOUR,
             minute = AlarmSettings.DEFAULT_MINUTE,
+            dismissTask = DismissTask.MATH,
         ),
     )
 
@@ -48,6 +50,10 @@ class AlarmViewModel @Inject constructor(
                 scheduler.scheduleDaily(hour, minute, LABEL)
             }
         }
+    }
+
+    fun setDismissTask(task: DismissTask) {
+        viewModelScope.launch { settings.setDismissTask(task) }
     }
 
     fun testAlarm() {
