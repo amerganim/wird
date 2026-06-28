@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.wird.core.database.WirdDatabase
 import com.wird.core.database.dao.AyahDao
+import com.wird.core.database.dao.BookmarkDao
 import com.wird.core.database.dao.LastPositionDao
 import com.wird.core.database.dao.SurahDao
 import dagger.Module
@@ -40,4 +41,8 @@ object DatabaseModule {
     @Provides
     fun provideLastPositionDao(database: WirdDatabase): LastPositionDao =
         database.lastPositionDao()
+
+    @Provides
+    fun provideBookmarkDao(database: WirdDatabase): BookmarkDao =
+        database.bookmarkDao()
 }

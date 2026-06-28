@@ -41,7 +41,8 @@ class SurahReaderViewModel @Inject constructor(
             combine(
                 repository.observeAyahs(surahNo),
                 readerSettings.arabicFontSp,
-            ) { ayahs, fontSp ->
+                repository.observeBookmarkedAyahIds(),
+            ) { ayahs, fontSp, bookmarkedIds ->
                 val items = buildList {
                     if (shouldShowBismillah(surah.number, ayahNo = 1)) {
                         add(ReaderItem.Bismillah(surah.number))
@@ -53,6 +54,7 @@ class SurahReaderViewModel @Inject constructor(
                     items = items,
                     restoreToAyahId = restoreTo,
                     arabicFontSp = fontSp,
+                    bookmarkedIds = bookmarkedIds,
                 )
             },
         )
@@ -68,5 +70,9 @@ class SurahReaderViewModel @Inject constructor(
 
     fun onFontSizeChange(sp: Int) {
         viewModelScope.launch { readerSettings.setArabicFontSp(sp) }
+    }
+
+    fun onToggleBookmark(ayahId: Int) {
+        viewModelScope.launch { repository.toggleBookmark(ayahId) }
     }
 }

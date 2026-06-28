@@ -16,5 +16,6 @@ fun JuzReaderRoute(
         onBack = onBack,
         onVisibleAyah = viewModel::onVisibleAyahChanged,
         onFontSizeChange = viewModel::onFontSizeChange,
+        onToggleBookmark = viewModel::onToggleBookmark,
     )
 }

@@ -37,7 +37,8 @@ class JuzReaderViewModel @Inject constructor(
             combine(
                 repository.observeAyahsByJuz(juz),
                 readerSettings.arabicFontSp,
-            ) { ayahs, fontSp ->
+                repository.observeBookmarkedAyahIds(),
+            ) { ayahs, fontSp, bookmarkedIds ->
                 val items = buildList {
                     var currentSurahNo = -1
                     ayahs.forEach { ayah ->
@@ -56,6 +57,7 @@ class JuzReaderViewModel @Inject constructor(
                     items = items,
                     restoreToAyahId = restoreTo,
                     arabicFontSp = fontSp,
+                    bookmarkedIds = bookmarkedIds,
                 )
             },
         )
@@ -71,5 +73,9 @@ class JuzReaderViewModel @Inject constructor(
 
     fun onFontSizeChange(sp: Int) {
         viewModelScope.launch { readerSettings.setArabicFontSp(sp) }
+    }
+
+    fun onToggleBookmark(ayahId: Int) {
+        viewModelScope.launch { repository.toggleBookmark(ayahId) }
     }
 }

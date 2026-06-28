@@ -10,7 +10,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.FormatSize
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -63,6 +65,7 @@ sealed interface ReaderUiState {
         val items: List<ReaderItem>,
         val restoreToAyahId: Int? = null,
         val arabicFontSp: Int = ReaderSettings.DEFAULT_SP,
+        val bookmarkedIds: Set<Int> = emptySet(),
     ) : ReaderUiState
 }
 
@@ -77,6 +80,7 @@ fun SurahReaderRoute(
         onBack = onBack,
         onVisibleAyah = viewModel::onVisibleAyahChanged,
         onFontSizeChange = viewModel::onFontSizeChange,
+        onToggleBookmark = viewModel::onToggleBookmark,
     )
 }
 
@@ -87,9 +91,11 @@ fun ReaderScreen(
     onBack: () -> Unit,
     onVisibleAyah: (Int) -> Unit = {},
     onFontSizeChange: (Int) -> Unit = {},
+    onToggleBookmark: (Int) -> Unit = {},
 ) {
     var showFontSheet by rememberSaveable { mutableStateOf(false) }
     val fontSp = (uiState as? ReaderUiState.Content)?.arabicFontSp ?: ReaderSettings.DEFAULT_SP
+    val bookmarkedIds = (uiState as? ReaderUiState.Content)?.bookmarkedIds ?: emptySet()
 
     Scaffold(
         topBar = {
@@ -172,7 +178,12 @@ fun ReaderScreen(
                             is ReaderItem.SurahHeader -> SurahHeaderRow(item.surah)
                             is ReaderItem.Bismillah -> BismillahHeader(fontSp)
                             is ReaderItem.AyahLine -> {
-                                AyahRow(item.ayah, fontSp)
+                                AyahRow(
+                                    ayah = item.ayah,
+                                    fontSp = fontSp,
+                                    isBookmarked = item.ayah.id in bookmarkedIds,
+                                    onToggleBookmark = { onToggleBookmark(item.ayah.id) },
+                                )
                                 HorizontalDivider()
                             }
                         }
@@ -216,8 +227,24 @@ private fun BismillahHeader(fontSp: Int) {
 }
 
 @Composable
-private fun AyahRow(ayah: AyahEntity, fontSp: Int) {
-    Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+private fun AyahRow(
+    ayah: AyahEntity,
+    fontSp: Int,
+    isBookmarked: Boolean,
+    onToggleBookmark: () -> Unit,
+) {
+    Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+        IconButton(onClick = onToggleBookmark, modifier = Modifier.align(Alignment.Start)) {
+            Icon(
+                imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark ayah",
+                tint = if (isBookmarked) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
         Text(
             text = "${ayah.textUthmani} $END_OF_AYAH${ayah.ayahNo.toArabicIndic()}",
             style = arabicStyle(fontSp),

@@ -1,12 +1,15 @@
 package com.wird.feature.quran.data
 
 import com.wird.core.database.dao.AyahDao
+import com.wird.core.database.dao.BookmarkDao
 import com.wird.core.database.dao.LastPositionDao
 import com.wird.core.database.dao.SurahDao
 import com.wird.core.database.entity.AyahEntity
+import com.wird.core.database.entity.BookmarkEntity
 import com.wird.core.database.entity.LastPositionEntity
 import com.wird.core.database.entity.SurahEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 interface QuranRepository {
@@ -20,6 +23,9 @@ interface QuranRepository {
     suspend fun getAyah(id: Int): AyahEntity?
     fun observeLastPosition(): Flow<LastPositionEntity?>
     suspend fun saveLastPosition(ayahId: Int, scrollOffset: Int = 0)
+    fun observeBookmarkedAyahIds(): Flow<Set<Int>>
+    fun observeBookmarks(): Flow<List<BookmarkEntity>>
+    suspend fun toggleBookmark(ayahId: Int)
 }
 
 class QuranRepositoryImpl @Inject constructor(
@@ -27,6 +33,7 @@ class QuranRepositoryImpl @Inject constructor(
     private val surahDao: SurahDao,
     private val ayahDao: AyahDao,
     private val lastPositionDao: LastPositionDao,
+    private val bookmarkDao: BookmarkDao,
 ) : QuranRepository {
 
     override suspend fun ensureSeeded() = seeder.seedIfNeeded()
@@ -68,5 +75,18 @@ class QuranRepositoryImpl @Inject constructor(
                 updatedAt = System.currentTimeMillis(),
             ),
         )
+    }
+
+    override fun observeBookmarkedAyahIds(): Flow<Set<Int>> =
+        bookmarkDao.observeIds().map { it.toSet() }
+
+    override fun observeBookmarks(): Flow<List<BookmarkEntity>> = bookmarkDao.observeAll()
+
+    override suspend fun toggleBookmark(ayahId: Int) {
+        if (bookmarkDao.exists(ayahId)) {
+            bookmarkDao.delete(ayahId)
+        } else {
+            bookmarkDao.insert(BookmarkEntity(ayahId = ayahId, createdAt = System.currentTimeMillis()))
+        }
     }
 }
