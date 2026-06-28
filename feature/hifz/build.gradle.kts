@@ -9,4 +9,6 @@ android {
 dependencies {
     implementation(project(":core:database"))
     implementation(libs.kotlinx.datetime)
+
+    testImplementation(libs.junit)
 }

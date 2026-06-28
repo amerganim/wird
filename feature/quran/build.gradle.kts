@@ -9,4 +9,6 @@ android {
 dependencies {
     implementation(project(":core:database"))
     implementation(libs.androidx.datastore.preferences)
+
+    testImplementation(libs.junit)
 }
