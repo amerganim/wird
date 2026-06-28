@@ -22,12 +22,21 @@ data class ContinueReading(
     val ayahNo: Int,
 )
 
+data class BookmarkListItem(
+    val ayahId: Int,
+    val surahNo: Int,
+    val surahNameTranslit: String,
+    val ayahNo: Int,
+    val snippet: String,
+)
+
 sealed interface SurahListUiState {
     data object Loading : SurahListUiState
     data class Content(
         val surahs: List<SurahEntity>,
         val juzStarts: List<JuzStart>,
         val continueReading: ContinueReading?,
+        val bookmarks: List<BookmarkListItem>,
         val query: String = "",
     ) : SurahListUiState
 }
@@ -42,18 +51,32 @@ class SurahListViewModel @Inject constructor(
     val uiState: StateFlow<SurahListUiState> = flow {
         repository.ensureSeeded()
         val juzStarts = repository.getJuzStarts()
+        val surahMap = repository.getSurahMap()
         emitAll(
             combine(
                 repository.observeSurahs(),
                 repository.observeLastPosition(),
                 query,
-            ) { surahs, last, q ->
+                repository.observeBookmarks(),
+            ) { surahs, last, q, bookmarks ->
                 val trimmed = q.trim()
+                val bookmarkItems = bookmarks.mapNotNull { bm ->
+                    val ayah = repository.getAyah(bm.ayahId) ?: return@mapNotNull null
+                    val surah = surahMap[ayah.surahNo] ?: return@mapNotNull null
+                    BookmarkListItem(
+                        ayahId = bm.ayahId,
+                        surahNo = surah.number,
+                        surahNameTranslit = surah.nameTranslit,
+                        ayahNo = ayah.ayahNo,
+                        snippet = ayah.textUthmani.take(70),
+                    )
+                }
                 SurahListUiState.Content(
                     surahs = if (trimmed.isEmpty()) surahs else surahs.filter { it.matches(trimmed) },
                     juzStarts = juzStarts,
                     // Hide the resume card while actively searching.
                     continueReading = if (trimmed.isEmpty()) last?.let { resolveContinue(it.ayahId) } else null,
+                    bookmarks = bookmarkItems,
                     query = q,
                 )
             },

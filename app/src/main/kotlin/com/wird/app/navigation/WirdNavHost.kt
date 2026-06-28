@@ -27,12 +27,19 @@ fun WirdApp() {
                 onJuzClick = { juz ->
                     navController.navigate(QuranDestinations.juzReaderRoute(juz))
                 },
+                onBookmarkClick = { surahNo, ayahId ->
+                    navController.navigate(QuranDestinations.readerRoute(surahNo, ayahId))
+                },
             )
         }
         composable(
             route = QuranDestinations.READER_ROUTE,
             arguments = listOf(
                 navArgument(QuranDestinations.SURAH_NO_ARG) { type = NavType.IntType },
+                navArgument(QuranDestinations.AYAH_ID_ARG) {
+                    type = NavType.IntType
+                    defaultValue = QuranDestinations.NO_AYAH
+                },
             ),
         ) {
             SurahReaderRoute(onBack = { navController.popBackStack() })

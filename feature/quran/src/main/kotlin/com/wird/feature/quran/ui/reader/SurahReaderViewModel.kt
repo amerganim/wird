@@ -25,6 +25,8 @@ class SurahReaderViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val surahNo: Int = checkNotNull(savedStateHandle[QuranDestinations.SURAH_NO_ARG])
+    private val targetAyahId: Int =
+        savedStateHandle[QuranDestinations.AYAH_ID_ARG] ?: QuranDestinations.NO_AYAH
 
     val uiState: StateFlow<ReaderUiState> = flow {
         repository.ensureSeeded()
@@ -33,9 +35,14 @@ class SurahReaderViewModel @Inject constructor(
             emit(ReaderUiState.Loading)
             return@flow
         }
-        // Resolve the saved resume point once — only restore if it's in this surah.
-        val saved = repository.observeLastPosition().first()?.ayahId
-        val restoreTo = saved?.takeIf { repository.getAyah(it)?.surahNo == surahNo }
+        // An explicit target ayah (e.g. from a bookmark) wins; otherwise restore
+        // the saved resume point, but only if it's within this surah.
+        val restoreTo = if (targetAyahId != QuranDestinations.NO_AYAH) {
+            targetAyahId
+        } else {
+            repository.observeLastPosition().first()?.ayahId
+                ?.takeIf { repository.getAyah(it)?.surahNo == surahNo }
+        }
 
         emitAll(
             combine(

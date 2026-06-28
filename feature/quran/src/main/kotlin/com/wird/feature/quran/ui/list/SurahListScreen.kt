@@ -44,6 +44,7 @@ import com.wird.feature.quran.data.JuzStart
 fun SurahListRoute(
     onSurahClick: (Int) -> Unit,
     onJuzClick: (Int) -> Unit,
+    onBookmarkClick: (Int, Int) -> Unit,
     viewModel: SurahListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -51,6 +52,7 @@ fun SurahListRoute(
         uiState = uiState,
         onSurahClick = onSurahClick,
         onJuzClick = onJuzClick,
+        onBookmarkClick = onBookmarkClick,
         onQueryChange = viewModel::onQueryChange,
     )
 }
@@ -61,6 +63,7 @@ fun SurahListScreen(
     uiState: SurahListUiState,
     onSurahClick: (Int) -> Unit,
     onJuzClick: (Int) -> Unit,
+    onBookmarkClick: (Int, Int) -> Unit,
     onQueryChange: (String) -> Unit,
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
@@ -94,10 +97,16 @@ fun SurahListScreen(
                         onClick = { selectedTab = 1 },
                         text = { Text("Juz") },
                     )
+                    Tab(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        text = { Text("Saved") },
+                    )
                 }
                 when (selectedTab) {
                     0 -> SurahList(uiState, onSurahClick, onQueryChange, Modifier.weight(1f))
-                    else -> JuzList(uiState.juzStarts, onJuzClick, Modifier.weight(1f))
+                    1 -> JuzList(uiState.juzStarts, onJuzClick, Modifier.weight(1f))
+                    else -> SavedList(uiState.bookmarks, onBookmarkClick, Modifier.weight(1f))
                 }
             }
         }
@@ -153,6 +162,44 @@ private fun JuzList(
                 headlineContent = { Text("Juz ${juz.juz}") },
                 supportingContent = {
                     Text("Starts at ${juz.surahNameTranslit} · ayah ${juz.ayahNo}")
+                },
+            )
+            HorizontalDivider()
+        }
+    }
+}
+
+@Composable
+private fun SavedList(
+    bookmarks: List<BookmarkListItem>,
+    onBookmarkClick: (Int, Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (bookmarks.isEmpty()) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = "No bookmarks yet.\nTap the bookmark icon on an ayah to save it.",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(32.dp),
+            )
+        }
+        return
+    }
+    LazyColumn(modifier = modifier.fillMaxSize()) {
+        items(bookmarks, key = { it.ayahId }) { bm ->
+            ListItem(
+                modifier = Modifier.clickable { onBookmarkClick(bm.surahNo, bm.ayahId) },
+                overlineContent = { Text("${bm.surahNameTranslit} · ayah ${bm.ayahNo}") },
+                headlineContent = {
+                    Text(
+                        text = bm.snippet,
+                        style = ArabicAyahTextStyle.copy(
+                            fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                        ),
+                        maxLines = 1,
+                    )
                 },
             )
             HorizontalDivider()
