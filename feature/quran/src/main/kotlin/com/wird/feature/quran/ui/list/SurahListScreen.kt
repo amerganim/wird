@@ -6,15 +6,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -42,7 +47,12 @@ fun SurahListRoute(
     viewModel: SurahListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    SurahListScreen(uiState = uiState, onSurahClick = onSurahClick, onJuzClick = onJuzClick)
+    SurahListScreen(
+        uiState = uiState,
+        onSurahClick = onSurahClick,
+        onJuzClick = onJuzClick,
+        onQueryChange = viewModel::onQueryChange,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,6 +61,7 @@ fun SurahListScreen(
     uiState: SurahListUiState,
     onSurahClick: (Int) -> Unit,
     onJuzClick: (Int) -> Unit,
+    onQueryChange: (String) -> Unit,
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
@@ -85,7 +96,7 @@ fun SurahListScreen(
                     )
                 }
                 when (selectedTab) {
-                    0 -> SurahList(uiState, onSurahClick, Modifier.weight(1f))
+                    0 -> SurahList(uiState, onSurahClick, onQueryChange, Modifier.weight(1f))
                     else -> JuzList(uiState.juzStarts, onJuzClick, Modifier.weight(1f))
                 }
             }
@@ -97,9 +108,22 @@ fun SurahListScreen(
 private fun SurahList(
     content: SurahListUiState.Content,
     onSurahClick: (Int) -> Unit,
+    onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
+        item {
+            OutlinedTextField(
+                value = content.query,
+                onValueChange = onQueryChange,
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                placeholder = { Text("Search surah") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
         content.continueReading?.let { cont ->
             item {
                 ContinueReadingCard(

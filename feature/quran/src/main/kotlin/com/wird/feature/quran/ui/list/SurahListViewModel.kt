@@ -6,6 +6,7 @@ import com.wird.core.database.entity.SurahEntity
 import com.wird.feature.quran.data.JuzStart
 import com.wird.feature.quran.data.QuranRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -27,6 +28,7 @@ sealed interface SurahListUiState {
         val surahs: List<SurahEntity>,
         val juzStarts: List<JuzStart>,
         val continueReading: ContinueReading?,
+        val query: String = "",
     ) : SurahListUiState
 }
 
@@ -35,6 +37,8 @@ class SurahListViewModel @Inject constructor(
     private val repository: QuranRepository,
 ) : ViewModel() {
 
+    private val query = MutableStateFlow("")
+
     val uiState: StateFlow<SurahListUiState> = flow {
         repository.ensureSeeded()
         val juzStarts = repository.getJuzStarts()
@@ -42,20 +46,33 @@ class SurahListViewModel @Inject constructor(
             combine(
                 repository.observeSurahs(),
                 repository.observeLastPosition(),
-            ) { surahs, last -> surahs to last }
-                .map { (surahs, last) ->
-                    SurahListUiState.Content(
-                        surahs = surahs,
-                        juzStarts = juzStarts,
-                        continueReading = last?.let { resolveContinue(it.ayahId) },
-                    )
-                },
+                query,
+            ) { surahs, last, q ->
+                val trimmed = q.trim()
+                SurahListUiState.Content(
+                    surahs = if (trimmed.isEmpty()) surahs else surahs.filter { it.matches(trimmed) },
+                    juzStarts = juzStarts,
+                    // Hide the resume card while actively searching.
+                    continueReading = if (trimmed.isEmpty()) last?.let { resolveContinue(it.ayahId) } else null,
+                    query = q,
+                )
+            },
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = SurahListUiState.Loading,
     )
+
+    fun onQueryChange(value: String) {
+        query.value = value
+    }
+
+    private fun SurahEntity.matches(q: String): Boolean =
+        nameTranslit.contains(q, ignoreCase = true) ||
+            nameEn.contains(q, ignoreCase = true) ||
+            nameAr.contains(q) ||
+            number.toString() == q
 
     private suspend fun resolveContinue(ayahId: Int): ContinueReading? {
         val ayah = repository.getAyah(ayahId) ?: return null
