@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Write-Output \"JAVA_HOME=$env:JAVA_HOME\"; Write-Output \"ANDROID_HOME=$env:ANDROID_HOME\"; Write-Output \"ANDROID_SDK_ROOT=$env:ANDROID_SDK_ROOT\"; Write-Output \"---java---\"; try { java -version 2>&1 } catch { \"no java\" }; Write-Output \"---gradle---\"; try { \\(Get-Command gradle -ErrorAction Stop\\).Source } catch { \"no gradle on PATH \\(will use wrapper\\)\" }; Write-Output \"---SDK platforms---\"; Get-ChildItem \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\\\\platforms\" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name; Write-Output \"---build-tools---\"; Get-ChildItem \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\\\\build-tools\" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name)",
+      "PowerShell(Write-Output \"LOCALAPPDATA=$env:LOCALAPPDATA\"; Write-Output \"SDK exists: $\\(Test-Path \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\\\\platforms\\\\android-35\"\\)\"; Write-Output \"JBR exists: $\\(Test-Path 'C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\\\\bin\\\\java.exe'\\)\")",
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git push *)",
+      "Bash(git rm *)",
+      "Bash(rm -rf feature/prayer feature/qibla feature/alarm feature/hifz feature/recitation data)",
+      "Bash(ls data *)",
+      "Read(//c/Users/USER/AppData/Local/Temp/**)",
+      "Bash(rm -f build_juz.log)",
+      "PowerShell(& \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\" devices -l)",
+      "Bash(rm -f build_font.log)",
+      "Bash(rm -f build_amiri.log)",
+      "Bash(rm -f build_search.log)",
+      "Bash(rm -f build_bm.log)",
+      "Bash(rm -f build_saved.log)",
+      "Bash(rm -f build_share.log)",
+      "Bash(rm -f build_prayer.log)",
+      "Bash(rm -f build_psettings.log)",
+      "Bash(rm -f build_city.log build_tz.log)",
+      "Bash(rm -f build_next.log)",
+      "Bash(rm -f build_notif.log)",
+      "Bash(rm -f build_alarm.log)",
+      "Bash(rm -f build_alarm2.log)",
+      "Bash(rm -f build_fajr.log)"
+    ]
+  }
+}
