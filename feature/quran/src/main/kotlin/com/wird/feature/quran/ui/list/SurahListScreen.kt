@@ -17,9 +17,14 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -28,14 +33,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wird.core.database.entity.SurahEntity
 import com.wird.core.ui.theme.ArabicAyahTextStyle
+import com.wird.feature.quran.data.JuzStart
 
 @Composable
 fun SurahListRoute(
     onSurahClick: (Int) -> Unit,
+    onJuzClick: (Int) -> Unit,
     viewModel: SurahListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    SurahListScreen(uiState = uiState, onSurahClick = onSurahClick)
+    SurahListScreen(uiState = uiState, onSurahClick = onSurahClick, onJuzClick = onJuzClick)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +50,10 @@ fun SurahListRoute(
 fun SurahListScreen(
     uiState: SurahListUiState,
     onSurahClick: (Int) -> Unit,
+    onJuzClick: (Int) -> Unit,
 ) {
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+
     Scaffold(
         topBar = { CenterAlignedTopAppBar(title = { Text("Wird") }) },
     ) { innerPadding ->
@@ -57,24 +67,71 @@ fun SurahListScreen(
                 CircularProgressIndicator()
             }
 
-            is SurahListUiState.Content -> LazyColumn(
+            is SurahListUiState.Content -> Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
             ) {
-                uiState.continueReading?.let { cont ->
-                    item {
-                        ContinueReadingCard(
-                            continueReading = cont,
-                            onClick = { onSurahClick(cont.surahNumber) },
-                        )
-                    }
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = { Text("Surah") },
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = { Text("Juz") },
+                    )
                 }
-                items(uiState.surahs, key = { it.number }) { surah ->
-                    SurahRow(surah = surah, onClick = { onSurahClick(surah.number) })
-                    HorizontalDivider()
+                when (selectedTab) {
+                    0 -> SurahList(uiState, onSurahClick, Modifier.weight(1f))
+                    else -> JuzList(uiState.juzStarts, onJuzClick, Modifier.weight(1f))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SurahList(
+    content: SurahListUiState.Content,
+    onSurahClick: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(modifier = modifier.fillMaxSize()) {
+        content.continueReading?.let { cont ->
+            item {
+                ContinueReadingCard(
+                    continueReading = cont,
+                    onClick = { onSurahClick(cont.surahNumber) },
+                )
+            }
+        }
+        items(content.surahs, key = { it.number }) { surah ->
+            SurahRow(surah = surah, onClick = { onSurahClick(surah.number) })
+            HorizontalDivider()
+        }
+    }
+}
+
+@Composable
+private fun JuzList(
+    juzStarts: List<JuzStart>,
+    onJuzClick: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(modifier = modifier.fillMaxSize()) {
+        items(juzStarts, key = { it.juz }) { juz ->
+            ListItem(
+                modifier = Modifier.clickable { onJuzClick(juz.juz) },
+                leadingContent = { NumberBadge(juz.juz) },
+                headlineContent = { Text("Juz ${juz.juz}") },
+                supportingContent = {
+                    Text("Starts at ${juz.surahNameTranslit} · ayah ${juz.ayahNo}")
+                },
+            )
+            HorizontalDivider()
         }
     }
 }
@@ -110,7 +167,7 @@ private fun SurahRow(
 ) {
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
-        leadingContent = { SurahNumberBadge(surah.number) },
+        leadingContent = { NumberBadge(surah.number) },
         headlineContent = { Text(surah.nameTranslit) },
         supportingContent = {
             Text("${surah.nameEn} · ${surah.ayahCount} ayahs · ${surah.revelationPlace}")
@@ -125,7 +182,7 @@ private fun SurahRow(
 }
 
 @Composable
-private fun SurahNumberBadge(number: Int) {
+private fun NumberBadge(number: Int) {
     Surface(
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.secondaryContainer,

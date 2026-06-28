@@ -13,6 +13,9 @@ interface SurahDao {
     @Query("SELECT * FROM surah ORDER BY number")
     fun observeAll(): Flow<List<SurahEntity>>
 
+    @Query("SELECT * FROM surah ORDER BY number")
+    suspend fun getAll(): List<SurahEntity>
+
     @Query("SELECT * FROM surah WHERE number = :number LIMIT 1")
     suspend fun getByNumber(number: Int): SurahEntity?
 

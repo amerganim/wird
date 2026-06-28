@@ -13,7 +13,10 @@ interface QuranRepository {
     suspend fun ensureSeeded()
     fun observeSurahs(): Flow<List<SurahEntity>>
     suspend fun getSurah(number: Int): SurahEntity?
+    suspend fun getSurahMap(): Map<Int, SurahEntity>
     fun observeAyahs(surahNo: Int): Flow<List<AyahEntity>>
+    fun observeAyahsByJuz(juz: Int): Flow<List<AyahEntity>>
+    suspend fun getJuzStarts(): List<JuzStart>
     suspend fun getAyah(id: Int): AyahEntity?
     fun observeLastPosition(): Flow<LastPositionEntity?>
     suspend fun saveLastPosition(ayahId: Int, scrollOffset: Int = 0)
@@ -32,8 +35,26 @@ class QuranRepositoryImpl @Inject constructor(
 
     override suspend fun getSurah(number: Int): SurahEntity? = surahDao.getByNumber(number)
 
+    override suspend fun getSurahMap(): Map<Int, SurahEntity> =
+        surahDao.getAll().associateBy { it.number }
+
     override fun observeAyahs(surahNo: Int): Flow<List<AyahEntity>> =
         ayahDao.observeBySurah(surahNo)
+
+    override fun observeAyahsByJuz(juz: Int): Flow<List<AyahEntity>> =
+        ayahDao.observeByJuz(juz)
+
+    override suspend fun getJuzStarts(): List<JuzStart> {
+        val surahNames = surahDao.getAll().associate { it.number to it.nameTranslit }
+        return ayahDao.getJuzStartAyahs().map { ayah ->
+            JuzStart(
+                juz = ayah.juz,
+                surahNo = ayah.surahNo,
+                surahNameTranslit = surahNames[ayah.surahNo].orEmpty(),
+                ayahNo = ayah.ayahNo,
+            )
+        }
+    }
 
     override suspend fun getAyah(id: Int): AyahEntity? = ayahDao.getById(id)
 

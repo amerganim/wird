@@ -16,29 +16,32 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SurahReaderViewModel @Inject constructor(
+class JuzReaderViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: QuranRepository,
 ) : ViewModel() {
 
-    private val surahNo: Int = checkNotNull(savedStateHandle[QuranDestinations.SURAH_NO_ARG])
+    private val juz: Int = checkNotNull(savedStateHandle[QuranDestinations.JUZ_ARG])
 
     val uiState: StateFlow<ReaderUiState> =
         combine(
-            flow { emit(repository.getSurah(surahNo)) },
-            repository.observeAyahs(surahNo),
-        ) { surah, ayahs ->
-            if (surah == null) {
-                ReaderUiState.Loading
-            } else {
-                val items = buildList {
-                    if (shouldShowBismillah(surah.number, ayahNo = 1)) {
-                        add(ReaderItem.Bismillah(surah.number))
+            flow { emit(repository.getSurahMap()) },
+            repository.observeAyahsByJuz(juz),
+        ) { surahMap, ayahs ->
+            val items = buildList {
+                var currentSurahNo = -1
+                ayahs.forEach { ayah ->
+                    if (ayah.surahNo != currentSurahNo) {
+                        currentSurahNo = ayah.surahNo
+                        surahMap[ayah.surahNo]?.let { add(ReaderItem.SurahHeader(it)) }
+                        if (shouldShowBismillah(ayah.surahNo, ayah.ayahNo)) {
+                            add(ReaderItem.Bismillah(ayah.surahNo))
+                        }
                     }
-                    ayahs.forEach { add(ReaderItem.AyahLine(it)) }
+                    add(ReaderItem.AyahLine(ayah))
                 }
-                ReaderUiState.Content(title = surah.nameTranslit, items = items)
             }
+            ReaderUiState.Content(title = "Juz $juz", items = items)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -46,10 +49,9 @@ class SurahReaderViewModel @Inject constructor(
         )
 
     init {
-        // Mark this surah as the resume point (top of surah for now).
         viewModelScope.launch {
             repository.ensureSeeded()
-            repository.observeAyahs(surahNo).first().firstOrNull()?.let {
+            repository.observeAyahsByJuz(juz).first().firstOrNull()?.let {
                 repository.saveLastPosition(it.id)
             }
         }

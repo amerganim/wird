@@ -13,6 +13,12 @@ interface AyahDao {
     @Query("SELECT * FROM ayah WHERE surahNo = :surahNo ORDER BY ayahNo")
     fun observeBySurah(surahNo: Int): Flow<List<AyahEntity>>
 
+    @Query("SELECT * FROM ayah WHERE juz = :juz ORDER BY id")
+    fun observeByJuz(juz: Int): Flow<List<AyahEntity>>
+
+    @Query("SELECT * FROM ayah WHERE id IN (SELECT MIN(id) FROM ayah GROUP BY juz) ORDER BY juz")
+    suspend fun getJuzStartAyahs(): List<AyahEntity>
+
     @Query("SELECT * FROM ayah WHERE id = :id LIMIT 1")
     suspend fun getById(id: Int): AyahEntity?
 

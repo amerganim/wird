@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.wird.feature.quran.navigation.QuranDestinations
 import com.wird.feature.quran.ui.list.SurahListRoute
+import com.wird.feature.quran.ui.reader.JuzReaderRoute
 import com.wird.feature.quran.ui.reader.SurahReaderRoute
 
 @Composable
@@ -23,6 +24,9 @@ fun WirdApp() {
                 onSurahClick = { surahNo ->
                     navController.navigate(QuranDestinations.readerRoute(surahNo))
                 },
+                onJuzClick = { juz ->
+                    navController.navigate(QuranDestinations.juzReaderRoute(juz))
+                },
             )
         }
         composable(
@@ -32,6 +36,14 @@ fun WirdApp() {
             ),
         ) {
             SurahReaderRoute(onBack = { navController.popBackStack() })
+        }
+        composable(
+            route = QuranDestinations.JUZ_READER_ROUTE,
+            arguments = listOf(
+                navArgument(QuranDestinations.JUZ_ARG) { type = NavType.IntType },
+            ),
+        ) {
+            JuzReaderRoute(onBack = { navController.popBackStack() })
         }
     }
 }

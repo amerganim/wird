@@ -3,6 +3,7 @@ package com.wird.feature.quran.ui.list
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wird.core.database.entity.SurahEntity
+import com.wird.feature.quran.data.JuzStart
 import com.wird.feature.quran.data.QuranRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,6 +25,7 @@ sealed interface SurahListUiState {
     data object Loading : SurahListUiState
     data class Content(
         val surahs: List<SurahEntity>,
+        val juzStarts: List<JuzStart>,
         val continueReading: ContinueReading?,
     ) : SurahListUiState
 }
@@ -35,6 +37,7 @@ class SurahListViewModel @Inject constructor(
 
     val uiState: StateFlow<SurahListUiState> = flow {
         repository.ensureSeeded()
+        val juzStarts = repository.getJuzStarts()
         emitAll(
             combine(
                 repository.observeSurahs(),
@@ -43,6 +46,7 @@ class SurahListViewModel @Inject constructor(
                 .map { (surahs, last) ->
                     SurahListUiState.Content(
                         surahs = surahs,
+                        juzStarts = juzStarts,
                         continueReading = last?.let { resolveContinue(it.ayahId) },
                     )
                 },

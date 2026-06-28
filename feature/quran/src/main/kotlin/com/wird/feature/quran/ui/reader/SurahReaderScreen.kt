@@ -16,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -24,17 +25,28 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wird.core.database.entity.AyahEntity
+import com.wird.core.database.entity.SurahEntity
 import com.wird.core.ui.theme.ArabicAyahTextStyle
 import com.wird.feature.quran.ui.toArabicIndic
 
 // End-of-ayah ornament (U+06DD) followed by the ayah number in Arabic-Indic digits.
 private const val END_OF_AYAH = '۝'
+private const val BISMILLAH = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ"
+
+sealed interface ReaderUiState {
+    data object Loading : ReaderUiState
+    data class Content(
+        val title: String,
+        val items: List<ReaderItem>,
+    ) : ReaderUiState
+}
 
 @Composable
 fun SurahReaderRoute(
@@ -42,12 +54,12 @@ fun SurahReaderRoute(
     viewModel: SurahReaderViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    SurahReaderScreen(uiState = uiState, onBack = onBack)
+    ReaderScreen(uiState = uiState, onBack = onBack)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SurahReaderScreen(
+fun ReaderScreen(
     uiState: ReaderUiState,
     onBack: () -> Unit,
 ) {
@@ -57,7 +69,7 @@ fun SurahReaderScreen(
                 title = {
                     Text(
                         when (uiState) {
-                            is ReaderUiState.Content -> uiState.surah.nameTranslit
+                            is ReaderUiState.Content -> uiState.title
                             ReaderUiState.Loading -> ""
                         },
                     )
@@ -88,12 +100,15 @@ fun SurahReaderScreen(
                         .fillMaxSize()
                         .padding(innerPadding),
                 ) {
-                    if (uiState.surah.number != 1 && uiState.surah.number != 9) {
-                        item { BismillahHeader() }
-                    }
-                    items(uiState.ayahs, key = { it.id }) { ayah ->
-                        AyahRow(ayah)
-                        HorizontalDivider()
+                    items(uiState.items, key = { it.key }) { item ->
+                        when (item) {
+                            is ReaderItem.SurahHeader -> SurahHeaderRow(item.surah)
+                            is ReaderItem.Bismillah -> BismillahHeader()
+                            is ReaderItem.AyahLine -> {
+                                AyahRow(item.ayah)
+                                HorizontalDivider()
+                            }
+                        }
                     }
                 }
             }
@@ -102,9 +117,28 @@ fun SurahReaderScreen(
 }
 
 @Composable
+private fun SurahHeaderRow(surah: SurahEntity) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = "${surah.number}. ${surah.nameAr}",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 16.dp),
+        )
+    }
+}
+
+@Composable
 private fun BismillahHeader() {
     Text(
-        text = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+        text = BISMILLAH,
         style = ArabicAyahTextStyle,
         textAlign = TextAlign.Center,
         color = MaterialTheme.colorScheme.primary,
