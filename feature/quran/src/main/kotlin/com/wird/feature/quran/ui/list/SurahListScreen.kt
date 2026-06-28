@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -17,6 +18,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -45,6 +47,7 @@ fun SurahListRoute(
     onSurahClick: (Int) -> Unit,
     onJuzClick: (Int) -> Unit,
     onBookmarkClick: (Int, Int) -> Unit,
+    onOpenKhatm: () -> Unit,
     viewModel: SurahListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -53,6 +56,7 @@ fun SurahListRoute(
         onSurahClick = onSurahClick,
         onJuzClick = onJuzClick,
         onBookmarkClick = onBookmarkClick,
+        onOpenKhatm = onOpenKhatm,
         onQueryChange = viewModel::onQueryChange,
     )
 }
@@ -64,12 +68,22 @@ fun SurahListScreen(
     onSurahClick: (Int) -> Unit,
     onJuzClick: (Int) -> Unit,
     onBookmarkClick: (Int, Int) -> Unit,
+    onOpenKhatm: () -> Unit,
     onQueryChange: (String) -> Unit,
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
     Scaffold(
-        topBar = { CenterAlignedTopAppBar(title = { Text("Wird") }) },
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Wird") },
+                actions = {
+                    IconButton(onClick = onOpenKhatm) {
+                        Icon(Icons.Default.CalendarMonth, contentDescription = "Khatm plan")
+                    }
+                },
+            )
+        },
     ) { innerPadding ->
         when (uiState) {
             SurahListUiState.Loading -> Box(

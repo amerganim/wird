@@ -14,6 +14,8 @@ object QuranDestinations {
     const val JUZ_ARG = "juz"
     const val JUZ_READER_ROUTE = "quran/juz/{$JUZ_ARG}"
 
+    const val KHATM_ROUTE = "quran/khatm"
+
     fun readerRoute(surahNo: Int, ayahId: Int? = null): String =
         "quran/reader/$surahNo" + (ayahId?.let { "?$AYAH_ID_ARG=$it" } ?: "")
 

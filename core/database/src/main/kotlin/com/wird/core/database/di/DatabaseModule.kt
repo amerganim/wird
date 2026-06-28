@@ -6,6 +6,7 @@ import com.wird.core.database.WirdDatabase
 import com.wird.core.database.dao.AyahDao
 import com.wird.core.database.dao.BookmarkDao
 import com.wird.core.database.dao.HifzDao
+import com.wird.core.database.dao.KhatmDao
 import com.wird.core.database.dao.LastPositionDao
 import com.wird.core.database.dao.SurahDao
 import dagger.Module
@@ -50,4 +51,8 @@ object DatabaseModule {
     @Provides
     fun provideHifzDao(database: WirdDatabase): HifzDao =
         database.hifzDao()
+
+    @Provides
+    fun provideKhatmDao(database: WirdDatabase): KhatmDao =
+        database.khatmDao()
 }
