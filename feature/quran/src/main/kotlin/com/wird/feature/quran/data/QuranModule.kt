@@ -17,4 +17,8 @@ abstract class QuranModule {
     @Binds
     @Singleton
     abstract fun bindKhatmRepository(impl: KhatmRepositoryImpl): KhatmRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindHabitRepository(impl: HabitRepositoryImpl): HabitRepository
 }

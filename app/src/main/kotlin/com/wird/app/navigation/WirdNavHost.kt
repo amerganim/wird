@@ -31,6 +31,7 @@ import com.wird.feature.hifz.ui.HifzRoute
 import com.wird.feature.prayer.navigation.PrayerDestinations
 import com.wird.feature.prayer.ui.PrayerRoute
 import com.wird.feature.quran.navigation.QuranDestinations
+import com.wird.feature.quran.ui.daily.DailyRoute
 import com.wird.feature.quran.ui.khatm.KhatmRoute
 import com.wird.feature.quran.ui.list.SurahListRoute
 import com.wird.feature.quran.ui.reader.JuzReaderRoute
@@ -99,10 +100,14 @@ fun WirdApp() {
                         navController.navigate(QuranDestinations.readerRoute(surahNo, ayahId))
                     },
                     onOpenKhatm = { navController.navigate(QuranDestinations.KHATM_ROUTE) },
+                    onOpenDaily = { navController.navigate(QuranDestinations.DAILY_ROUTE) },
                 )
             }
             composable(QuranDestinations.KHATM_ROUTE) {
                 KhatmRoute(onBack = { navController.popBackStack() })
+            }
+            composable(QuranDestinations.DAILY_ROUTE) {
+                DailyRoute(onBack = { navController.popBackStack() })
             }
             composable(
                 route = QuranDestinations.READER_ROUTE,

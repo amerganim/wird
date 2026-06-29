@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
@@ -48,6 +49,7 @@ fun SurahListRoute(
     onJuzClick: (Int) -> Unit,
     onBookmarkClick: (Int, Int) -> Unit,
     onOpenKhatm: () -> Unit,
+    onOpenDaily: () -> Unit,
     viewModel: SurahListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -57,6 +59,7 @@ fun SurahListRoute(
         onJuzClick = onJuzClick,
         onBookmarkClick = onBookmarkClick,
         onOpenKhatm = onOpenKhatm,
+        onOpenDaily = onOpenDaily,
         onQueryChange = viewModel::onQueryChange,
     )
 }
@@ -69,6 +72,7 @@ fun SurahListScreen(
     onJuzClick: (Int) -> Unit,
     onBookmarkClick: (Int, Int) -> Unit,
     onOpenKhatm: () -> Unit,
+    onOpenDaily: () -> Unit,
     onQueryChange: (String) -> Unit,
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
@@ -78,6 +82,9 @@ fun SurahListScreen(
             CenterAlignedTopAppBar(
                 title = { Text("Wird") },
                 actions = {
+                    IconButton(onClick = onOpenDaily) {
+                        Icon(Icons.Default.WbSunny, contentDescription = "Daily ayat")
+                    }
                     IconButton(onClick = onOpenKhatm) {
                         Icon(Icons.Default.CalendarMonth, contentDescription = "Khatm plan")
                     }
