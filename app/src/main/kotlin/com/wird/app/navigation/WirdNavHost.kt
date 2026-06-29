@@ -3,6 +3,7 @@ package com.wird.app.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Mosque
 import androidx.compose.material.icons.outlined.Repeat
@@ -30,6 +31,8 @@ import com.wird.feature.hifz.ui.HifzReviewRoute
 import com.wird.feature.hifz.ui.HifzRoute
 import com.wird.feature.prayer.navigation.PrayerDestinations
 import com.wird.feature.prayer.ui.PrayerRoute
+import com.wird.feature.qibla.navigation.QiblaDestinations
+import com.wird.feature.qibla.QiblaRoute
 import com.wird.feature.quran.navigation.QuranDestinations
 import com.wird.feature.quran.ui.daily.DailyRoute
 import com.wird.feature.quran.ui.khatm.KhatmRoute
@@ -44,6 +47,7 @@ private enum class TopLevelDestination(
 ) {
     QURAN(QuranDestinations.SURAH_LIST_ROUTE, "Quran", Icons.Outlined.MenuBook),
     PRAYER(PrayerDestinations.ROUTE, "Prayer", Icons.Outlined.Mosque),
+    QIBLA(QiblaDestinations.ROUTE, "Qibla", Icons.Outlined.Explore),
     ALARM(AlarmDestinations.ROUTE, "Alarm", Icons.Outlined.Alarm),
     HIFZ(HifzDestinations.ROUTE, "Hifz", Icons.Outlined.Repeat),
 }
@@ -131,6 +135,9 @@ fun WirdApp() {
             }
             composable(PrayerDestinations.ROUTE) {
                 PrayerRoute()
+            }
+            composable(QiblaDestinations.ROUTE) {
+                QiblaRoute()
             }
             composable(AlarmDestinations.ROUTE) {
                 AlarmRoute()

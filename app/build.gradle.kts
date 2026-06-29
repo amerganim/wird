@@ -35,6 +35,7 @@ dependencies {
     implementation(project(":feature:prayer"))
     implementation(project(":feature:alarm"))
     implementation(project(":feature:hifz"))
+    implementation(project(":feature:qibla"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
