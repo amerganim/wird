@@ -3,6 +3,8 @@ package com.wird.feature.quran.data
 import com.wird.core.database.dao.AyahDao
 import com.wird.core.database.dao.SurahDao
 import com.wird.core.database.entity.AyahEntity
+import com.wird.feature.quran.notification.DailyNotifier
+import com.wird.feature.quran.notification.DailyReminderScheduler
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import javax.inject.Inject
@@ -17,17 +19,35 @@ data class DailyAyahItem(
 
 interface HabitRepository {
     fun observeState(): Flow<HabitState>
+    fun observeReminder(): Flow<ReminderPrefs>
     suspend fun getDailyAyat(): List<DailyAyahItem>
     suspend fun markReadToday()
+    suspend fun setReminderEnabled(enabled: Boolean)
+    suspend fun setReminderTime(hour: Int, minute: Int)
 }
 
 class HabitRepositoryImpl @Inject constructor(
     private val ayahDao: AyahDao,
     private val surahDao: SurahDao,
     private val habitSettings: HabitSettings,
+    private val reminderScheduler: DailyReminderScheduler,
+    private val notifier: DailyNotifier,
 ) : HabitRepository {
 
     override fun observeState(): Flow<HabitState> = habitSettings.state
+
+    override fun observeReminder(): Flow<ReminderPrefs> = habitSettings.reminder
+
+    override suspend fun setReminderEnabled(enabled: Boolean) {
+        habitSettings.setReminderEnabled(enabled)
+        if (enabled) notifier.ensureChannel()
+        reminderScheduler.reschedule()
+    }
+
+    override suspend fun setReminderTime(hour: Int, minute: Int) {
+        habitSettings.setReminderTime(hour, minute)
+        reminderScheduler.reschedule()
+    }
 
     override suspend fun getDailyAyat(): List<DailyAyahItem> {
         // Deterministic per-day selection of consecutive ayat.

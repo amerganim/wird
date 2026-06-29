@@ -1,6 +1,7 @@
 package com.wird.feature.quran.data
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -20,6 +21,12 @@ data class HabitState(
     val readToday: Boolean,
 )
 
+data class ReminderPrefs(
+    val enabled: Boolean,
+    val hour: Int,
+    val minute: Int,
+)
+
 /** Daily-reading streak tracking. */
 @Singleton
 class HabitSettings @Inject constructor(
@@ -29,6 +36,28 @@ class HabitSettings @Inject constructor(
         val LAST_READ = longPreferencesKey("last_read_epoch_day")
         val STREAK = intPreferencesKey("current_streak")
         val BEST = intPreferencesKey("best_streak")
+        val REMINDER_ON = booleanPreferencesKey("reminder_enabled")
+        val REMINDER_HOUR = intPreferencesKey("reminder_hour")
+        val REMINDER_MIN = intPreferencesKey("reminder_minute")
+    }
+
+    val reminder: Flow<ReminderPrefs> = context.habitDataStore.data.map { p ->
+        ReminderPrefs(
+            enabled = p[Keys.REMINDER_ON] ?: false,
+            hour = p[Keys.REMINDER_HOUR] ?: DEFAULT_HOUR,
+            minute = p[Keys.REMINDER_MIN] ?: DEFAULT_MINUTE,
+        )
+    }
+
+    suspend fun setReminderEnabled(enabled: Boolean) {
+        context.habitDataStore.edit { it[Keys.REMINDER_ON] = enabled }
+    }
+
+    suspend fun setReminderTime(hour: Int, minute: Int) {
+        context.habitDataStore.edit {
+            it[Keys.REMINDER_HOUR] = hour
+            it[Keys.REMINDER_MIN] = minute
+        }
     }
 
     val state: Flow<HabitState> = context.habitDataStore.data.map { p ->
@@ -57,5 +86,10 @@ class HabitSettings @Inject constructor(
             p[Keys.STREAK] = newStreak
             p[Keys.BEST] = maxOf(p[Keys.BEST] ?: 0, newStreak)
         }
+    }
+
+    private companion object {
+        const val DEFAULT_HOUR = 7
+        const val DEFAULT_MINUTE = 0
     }
 }

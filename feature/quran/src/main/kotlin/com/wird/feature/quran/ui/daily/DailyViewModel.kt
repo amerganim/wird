@@ -18,6 +18,9 @@ data class DailyUiState(
     val currentStreak: Int = 0,
     val bestStreak: Int = 0,
     val readToday: Boolean = false,
+    val reminderEnabled: Boolean = false,
+    val reminderHour: Int = 7,
+    val reminderMinute: Int = 0,
 )
 
 @HiltViewModel
@@ -28,12 +31,16 @@ class DailyViewModel @Inject constructor(
     val uiState: StateFlow<DailyUiState> = combine(
         flow { emit(repository.getDailyAyat()) },
         repository.observeState(),
-    ) { ayat, state ->
+        repository.observeReminder(),
+    ) { ayat, state, reminder ->
         DailyUiState(
             ayat = ayat,
             currentStreak = state.currentStreak,
             bestStreak = state.bestStreak,
             readToday = state.readToday,
+            reminderEnabled = reminder.enabled,
+            reminderHour = reminder.hour,
+            reminderMinute = reminder.minute,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -43,5 +50,13 @@ class DailyViewModel @Inject constructor(
 
     fun markRead() {
         viewModelScope.launch { repository.markReadToday() }
+    }
+
+    fun setReminderEnabled(enabled: Boolean) {
+        viewModelScope.launch { repository.setReminderEnabled(enabled) }
+    }
+
+    fun setReminderTime(hour: Int, minute: Int) {
+        viewModelScope.launch { repository.setReminderTime(hour, minute) }
     }
 }
