@@ -26,7 +26,18 @@
       "Bash(rm -f build_notif.log)",
       "Bash(rm -f build_alarm.log)",
       "Bash(rm -f build_alarm2.log)",
-      "Bash(rm -f build_fajr.log)"
+      "Bash(rm -f build_fajr.log)",
+      "Bash(rm -f build_hifz.log)",
+      "Bash(git mv *)",
+      "Bash(rm -f build_extract.log)",
+      "Bash(rm -f build_khatm.log)",
+      "Bash(rm -f build_daily.log)",
+      "Bash(rm -f build_dreminder.log build_dreminder2.log)",
+      "Bash(rm -f build_qibla.log)",
+      "Bash(rm -f build_qiblaar.log)",
+      "Bash(rm -f build_practice.log build_practice2.log)",
+      "Bash(export JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\")",
+      "Bash(./gradlew :app:assembleDebug -q)"
     ]
   }
 }

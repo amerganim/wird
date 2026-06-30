@@ -30,6 +30,7 @@ import com.wird.feature.hifz.navigation.HifzDestinations
 import com.wird.feature.hifz.ui.HifzPracticeRoute
 import com.wird.feature.hifz.ui.HifzReviewRoute
 import com.wird.feature.hifz.ui.HifzRoute
+import com.wird.feature.hifz.ui.TikrarRoute
 import com.wird.feature.prayer.navigation.PrayerDestinations
 import com.wird.feature.prayer.ui.PrayerRoute
 import com.wird.feature.qibla.navigation.QiblaDestinations
@@ -147,6 +148,7 @@ fun WirdApp() {
                 HifzRoute(
                     onStartReview = { navController.navigate(HifzDestinations.REVIEW_ROUTE) },
                     onPracticeSurah = { navController.navigate(HifzDestinations.practiceRoute(it)) },
+                    onTikrarSurah = { navController.navigate(HifzDestinations.tikrarRoute(it)) },
                 )
             }
             composable(HifzDestinations.REVIEW_ROUTE) {
@@ -159,6 +161,14 @@ fun WirdApp() {
                 ),
             ) {
                 HifzPracticeRoute(onBack = { navController.popBackStack() })
+            }
+            composable(
+                route = HifzDestinations.TIKRAR_ROUTE,
+                arguments = listOf(
+                    navArgument(HifzDestinations.SURAH_NO_ARG) { type = NavType.IntType },
+                ),
+            ) {
+                TikrarRoute(onBack = { navController.popBackStack() })
             }
         }
     }

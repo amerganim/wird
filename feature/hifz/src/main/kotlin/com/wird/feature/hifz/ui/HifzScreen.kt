@@ -9,11 +9,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -38,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun HifzRoute(
     onStartReview: () -> Unit,
     onPracticeSurah: (Int) -> Unit,
+    onTikrarSurah: (Int) -> Unit,
     viewModel: HifzViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -46,6 +51,7 @@ fun HifzRoute(
         onStartReview = onStartReview,
         onAddSurah = viewModel::addSurah,
         onPracticeSurah = onPracticeSurah,
+        onTikrarSurah = onTikrarSurah,
     )
 }
 
@@ -56,6 +62,7 @@ fun HifzScreen(
     onStartReview: () -> Unit,
     onAddSurah: (Int) -> Unit,
     onPracticeSurah: (Int) -> Unit,
+    onTikrarSurah: (Int) -> Unit,
 ) {
     var showPicker by remember { mutableStateOf(false) }
 
@@ -113,7 +120,7 @@ fun HifzScreen(
             if (state.memorizing.isNotEmpty()) {
                 item {
                     Text(
-                        "Practice (progressive blanking)",
+                        "Practice & tikrar",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(top = 8.dp),
                     )
@@ -122,7 +129,15 @@ fun HifzScreen(
                     ListItem(
                         modifier = Modifier.clickable { onPracticeSurah(surah.surahNo) },
                         headlineContent = { Text(surah.nameTranslit) },
-                        supportingContent = { Text("${surah.count} ayat") },
+                        supportingContent = { Text("${surah.count} ayat · tap to practice") },
+                        trailingContent = {
+                            IconButton(onClick = { onTikrarSurah(surah.surahNo) }) {
+                                Icon(
+                                    Icons.Default.PlayCircle,
+                                    contentDescription = "Tikrar (listen & repeat)",
+                                )
+                            }
+                        },
                     )
                     HorizontalDivider()
                 }
