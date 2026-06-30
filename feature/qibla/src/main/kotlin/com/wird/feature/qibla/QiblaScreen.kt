@@ -1,9 +1,9 @@
 package com.wird.feature.qibla
 
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,29 +12,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlin.math.min
@@ -50,76 +53,101 @@ fun QiblaRoute(viewModel: QiblaViewModel = hiltViewModel()) {
 @Composable
 fun QiblaScreen(uiState: QiblaUiState) {
     val context = LocalContext.current
-    val magneticHeading = remember { mutableFloatStateOf(0f) }
-    val accuracy = remember { mutableIntStateOf(SensorManager.SENSOR_STATUS_UNRELIABLE) }
+    var arMode by remember { mutableStateOf(false) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> arMode = granted }
 
-    DisposableEffect(Unit) {
-        val sensorManager = context.getSystemService(SensorManager::class.java)
-        val sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-        val rotationMatrix = FloatArray(9)
-        val orientation = FloatArray(3)
-        val listener = object : SensorEventListener {
-            override fun onSensorChanged(event: SensorEvent) {
-                SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                SensorManager.getOrientation(rotationMatrix, orientation)
-                val azimuth = (Math.toDegrees(orientation[0].toDouble()).toFloat() + 360f) % 360f
-                // Low-pass filter that respects the 0/360 wrap-around.
-                val delta = ((azimuth - magneticHeading.floatValue + 540f) % 360f) - 180f
-                magneticHeading.floatValue = (magneticHeading.floatValue + delta * SMOOTHING + 360f) % 360f
-            }
-
-            override fun onAccuracyChanged(sensor: Sensor?, acc: Int) {
-                if (sensor?.type == Sensor.TYPE_ROTATION_VECTOR) accuracy.intValue = acc
-            }
+    fun toggleAr() {
+        if (arMode) {
+            arMode = false
+        } else if (hasCamera(context)) {
+            arMode = true
+        } else {
+            cameraLauncher.launch(Manifest.permission.CAMERA)
         }
-        sensorManager?.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
-        onDispose { sensorManager?.unregisterListener(listener) }
     }
 
-    val trueHeading = (magneticHeading.floatValue + uiState.declination + 360f) % 360f
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Qibla") },
+                actions = {
+                    IconButton(onClick = { toggleAr() }) {
+                        Icon(
+                            imageVector = if (arMode) Icons.Default.Explore else Icons.Default.CameraAlt,
+                            contentDescription = if (arMode) "Compass mode" else "AR mode",
+                        )
+                    }
+                },
+            )
+        },
+    ) { innerPadding ->
+        if (arMode) {
+            QiblaArView(
+                qiblaBearing = uiState.qiblaBearing,
+                declination = uiState.declination,
+                modifier = Modifier.padding(innerPadding),
+            )
+        } else {
+            CompassMode(uiState, Modifier.padding(innerPadding))
+        }
+    }
+}
+
+@Composable
+private fun CompassMode(uiState: QiblaUiState, modifier: Modifier) {
+    val heading = rememberDeviceHeading()
+    val trueHeading = (heading.azimuth + uiState.declination + 360f) % 360f
     val pointerAngle = (uiState.qiblaBearing - trueHeading + 360f) % 360f
     val aligned = min(pointerAngle, 360f - pointerAngle) < 6f
-    val needsCalibration = accuracy.intValue <= SensorManager.SENSOR_STATUS_ACCURACY_LOW
+    val needsCalibration = heading.accuracy <= SensorManagerAccuracy.LOW
 
-    Scaffold(
-        topBar = { CenterAlignedTopAppBar(title = { Text("Qibla") }) },
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
-        ) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
+    ) {
+        Text(
+            "${uiState.qiblaBearing.roundToInt()}° from North · ${uiState.locationName}",
+            style = MaterialTheme.typography.titleMedium,
+        )
+
+        if (!heading.available) {
             Text(
-                "${uiState.qiblaBearing.roundToInt()}° from North · ${uiState.locationName}",
-                style = MaterialTheme.typography.titleMedium,
-            )
-
-            Compass(trueHeading = trueHeading, pointerAngle = pointerAngle, aligned = aligned)
-
-            Text(
-                text = if (aligned) "Facing the Qibla 🕋" else "Turn until 🕋 points up",
-                style = MaterialTheme.typography.titleLarge,
-                color = if (aligned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-            )
-
-            Text(
-                "Heading ${trueHeading.roundToInt()}°",
+                "This phone has no compass sensor. Use AR mode, or a device with a magnetometer.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
             )
+            return@Column
+        }
 
-            if (needsCalibration) {
-                Text(
-                    "Low compass accuracy — wave your phone in a figure-8 to calibrate.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    textAlign = TextAlign.Center,
-                )
-            }
+        Compass(trueHeading = trueHeading, pointerAngle = pointerAngle, aligned = aligned)
+
+        Text(
+            text = if (aligned) "Facing the Qibla 🕋" else "Hold the phone up and turn until 🕋 points up",
+            style = MaterialTheme.typography.titleLarge,
+            color = if (aligned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+        )
+
+        Text(
+            "Heading ${trueHeading.roundToInt()}°",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        if (needsCalibration) {
+            Text(
+                "Low compass accuracy — wave your phone in a figure-8 to calibrate.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
@@ -132,7 +160,6 @@ private fun Compass(trueHeading: Float, pointerAngle: Float, aligned: Boolean) {
         modifier = Modifier.size(300.dp),
     ) {
         Box(Modifier.fillMaxSize()) {
-            // Cardinal directions rotate so N points at true north.
             Box(
                 Modifier
                     .fillMaxSize()
@@ -145,7 +172,6 @@ private fun Compass(trueHeading: Float, pointerAngle: Float, aligned: Boolean) {
                 Text("W", Modifier.align(Alignment.CenterStart))
             }
 
-            // Qibla pointer, relative to the phone (up = straight ahead).
             Box(
                 Modifier
                     .fillMaxSize()
@@ -169,4 +195,9 @@ private fun Compass(trueHeading: Float, pointerAngle: Float, aligned: Boolean) {
     }
 }
 
-private const val SMOOTHING = 0.15f
+private object SensorManagerAccuracy {
+    const val LOW = 1 // SensorManager.SENSOR_STATUS_ACCURACY_LOW
+}
+
+private fun hasCamera(context: android.content.Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
