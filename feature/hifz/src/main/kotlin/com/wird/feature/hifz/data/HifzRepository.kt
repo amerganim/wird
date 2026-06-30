@@ -19,13 +19,23 @@ data class ReviewCard(
     val item: HifzItemEntity,
 )
 
+/** A surah the user is memorizing, for the dashboard list. */
+data class MemorizingSurah(
+    val surahNo: Int,
+    val nameTranslit: String,
+    val count: Int,
+)
+
 interface HifzRepository {
     fun observeTotalCount(): Flow<Int>
     fun observeDueCount(): Flow<Int>
     fun observeHifzAyahIds(): Flow<Set<Int>>
     fun observeSurahs(): Flow<List<SurahEntity>>
+    fun observeMemorizingSurahs(): Flow<List<MemorizingSurah>>
     suspend fun addSurah(surahNo: Int): Int
     suspend fun getDueCards(): List<ReviewCard>
+    suspend fun getMemorizedAyat(surahNo: Int): List<AyahEntity>
+    suspend fun getSurahName(surahNo: Int): String
     suspend fun grade(ayahId: Int, grade: Sm2.Grade)
 }
 
@@ -45,6 +55,18 @@ class HifzRepositoryImpl @Inject constructor(
     override fun observeHifzAyahIds(): Flow<Set<Int>> = hifzDao.observeIds().map { it.toSet() }
 
     override fun observeSurahs(): Flow<List<SurahEntity>> = surahDao.observeAll()
+
+    override fun observeMemorizingSurahs(): Flow<List<MemorizingSurah>> =
+        hifzDao.observeSurahCounts().map { counts ->
+            val names = surahDao.getAll().associate { it.number to it.nameTranslit }
+            counts.map { MemorizingSurah(it.surahNo, names[it.surahNo].orEmpty(), it.count) }
+        }
+
+    override suspend fun getMemorizedAyat(surahNo: Int): List<AyahEntity> =
+        hifzDao.getMemorizedAyahsInSurah(surahNo)
+
+    override suspend fun getSurahName(surahNo: Int): String =
+        surahDao.getByNumber(surahNo)?.nameTranslit ?: "Surah $surahNo"
 
     override suspend fun addSurah(surahNo: Int): Int {
         val today = today()

@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun HifzRoute(
     onStartReview: () -> Unit,
+    onPracticeSurah: (Int) -> Unit,
     viewModel: HifzViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -44,6 +45,7 @@ fun HifzRoute(
         state = uiState,
         onStartReview = onStartReview,
         onAddSurah = viewModel::addSurah,
+        onPracticeSurah = onPracticeSurah,
     )
 }
 
@@ -53,50 +55,77 @@ fun HifzScreen(
     state: HifzDashboardState,
     onStartReview: () -> Unit,
     onAddSurah: (Int) -> Unit,
+    onPracticeSurah: (Int) -> Unit,
 ) {
     var showPicker by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { CenterAlignedTopAppBar(title = { Text("Hifz") }) },
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 24.dp),
         ) {
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(20.dp)) {
-                    Text("Due for review", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    Text("${state.dueCount}", fontSize = 48.sp, fontWeight = FontWeight.Bold)
+            item {
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(20.dp)) {
+                        Text("Due for review", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        Text("${state.dueCount}", fontSize = 48.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "${state.totalCount} ayat memorizing",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            item {
+                Button(
+                    onClick = onStartReview,
+                    enabled = state.dueCount > 0,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(if (state.dueCount > 0) "Review ${state.dueCount} now" else "Nothing due") }
+            }
+
+            item {
+                OutlinedButton(
+                    onClick = { showPicker = true },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Add a surah to memorize") }
+            }
+
+            if (state.totalCount == 0) {
+                item {
                     Text(
-                        "${state.totalCount} ayat memorizing",
-                        style = MaterialTheme.typography.bodyMedium,
+                        "Add a surah, then review daily. Spaced repetition (SM-2) schedules " +
+                            "each ayah so you revise right before you'd forget it.",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
 
-            Button(
-                onClick = onStartReview,
-                enabled = state.dueCount > 0,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (state.dueCount > 0) "Review ${state.dueCount} now" else "Nothing due") }
-
-            OutlinedButton(
-                onClick = { showPicker = true },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Add a surah to memorize") }
-
-            if (state.totalCount == 0) {
-                Text(
-                    "Add a surah, then review daily. Spaced repetition (SM-2) schedules " +
-                        "each ayah so you revise right before you'd forget it.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            if (state.memorizing.isNotEmpty()) {
+                item {
+                    Text(
+                        "Practice (progressive blanking)",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                items(state.memorizing, key = { it.surahNo }) { surah ->
+                    ListItem(
+                        modifier = Modifier.clickable { onPracticeSurah(surah.surahNo) },
+                        headlineContent = { Text(surah.nameTranslit) },
+                        supportingContent = { Text("${surah.count} ayat") },
+                    )
+                    HorizontalDivider()
+                }
             }
         }
 

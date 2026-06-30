@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wird.core.database.entity.SurahEntity
 import com.wird.feature.hifz.data.HifzRepository
+import com.wird.feature.hifz.data.MemorizingSurah
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +17,7 @@ data class HifzDashboardState(
     val totalCount: Int = 0,
     val dueCount: Int = 0,
     val surahs: List<SurahEntity> = emptyList(),
+    val memorizing: List<MemorizingSurah> = emptyList(),
 )
 
 @HiltViewModel
@@ -27,8 +29,14 @@ class HifzViewModel @Inject constructor(
         repository.observeTotalCount(),
         repository.observeDueCount(),
         repository.observeSurahs(),
-    ) { total, due, surahs ->
-        HifzDashboardState(totalCount = total, dueCount = due, surahs = surahs)
+        repository.observeMemorizingSurahs(),
+    ) { total, due, surahs, memorizing ->
+        HifzDashboardState(
+            totalCount = total,
+            dueCount = due,
+            surahs = surahs,
+            memorizing = memorizing,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),

@@ -27,6 +27,7 @@ import androidx.navigation.navArgument
 import com.wird.feature.alarm.navigation.AlarmDestinations
 import com.wird.feature.alarm.ui.AlarmRoute
 import com.wird.feature.hifz.navigation.HifzDestinations
+import com.wird.feature.hifz.ui.HifzPracticeRoute
 import com.wird.feature.hifz.ui.HifzReviewRoute
 import com.wird.feature.hifz.ui.HifzRoute
 import com.wird.feature.prayer.navigation.PrayerDestinations
@@ -145,10 +146,19 @@ fun WirdApp() {
             composable(HifzDestinations.ROUTE) {
                 HifzRoute(
                     onStartReview = { navController.navigate(HifzDestinations.REVIEW_ROUTE) },
+                    onPracticeSurah = { navController.navigate(HifzDestinations.practiceRoute(it)) },
                 )
             }
             composable(HifzDestinations.REVIEW_ROUTE) {
                 HifzReviewRoute(onFinish = { navController.popBackStack() })
+            }
+            composable(
+                route = HifzDestinations.PRACTICE_ROUTE,
+                arguments = listOf(
+                    navArgument(HifzDestinations.SURAH_NO_ARG) { type = NavType.IntType },
+                ),
+            ) {
+                HifzPracticeRoute(onBack = { navController.popBackStack() })
             }
         }
     }
