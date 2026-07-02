@@ -93,7 +93,8 @@ class FollowAlongViewModel @Inject constructor(
     fun setAudioGranted(granted: Boolean) = _state.update { it.copy(audioGranted = granted) }
 
     fun downloadModel() {
-        viewModelScope.launch { modelManager.download() }
+        // Runs in a foreground service so it survives the app being minimized.
+        modelManager.startDownload()
     }
 
     fun toggle() {

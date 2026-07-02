@@ -1,6 +1,7 @@
 package com.wird.feature.recitation.vosk
 
 import android.content.Context
+import android.content.Intent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,9 +12,11 @@ import org.vosk.Model
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipInputStream
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.cancellation.CancellationException
 
 sealed interface ModelState {
     data object NotDownloaded : ModelState
@@ -38,6 +41,7 @@ class VoskModelManager @Inject constructor(
 
     @Volatile
     private var model: Model? = null
+    private val downloading = AtomicBoolean(false)
 
     private val _state = MutableStateFlow<ModelState>(
         if (isInstalled()) ModelState.Ready else ModelState.NotDownloaded,
@@ -46,17 +50,33 @@ class VoskModelManager @Inject constructor(
 
     fun isInstalled(): Boolean = File(modelDir, "conf").isDirectory
 
+    /**
+     * Kicks off the download in a foreground service so it survives the app being
+     * minimized (a plain viewModelScope job gets killed in the background). Safe to
+     * call repeatedly — the service and [download] both guard against duplicates.
+     */
+    fun startDownload() {
+        if (isInstalled()) {
+            _state.value = ModelState.Ready
+            return
+        }
+        if (state.value is ModelState.Downloading) return
+        context.startForegroundService(Intent(context, ModelDownloadService::class.java))
+    }
+
     /** Loads (once) and returns the model, or null if it isn't installed. */
     suspend fun loadedModel(): Model? = withContext(Dispatchers.IO) {
         if (!isInstalled()) return@withContext null
         model ?: runCatching { Model(modelDir.absolutePath) }.getOrNull()?.also { model = it }
     }
 
+    /** The actual download; run from [ModelDownloadService]. Idempotent + cancellation-safe. */
     suspend fun download() = withContext(Dispatchers.IO) {
         if (isInstalled()) {
             _state.value = ModelState.Ready
             return@withContext
         }
+        if (!downloading.compareAndSet(false, true)) return@withContext
         val tmp = File(context.cacheDir, "vosk-ar.zip")
         try {
             _state.value = ModelState.Downloading(0f)
@@ -78,10 +98,14 @@ class VoskModelManager @Inject constructor(
             }
             unzipStrippingTopDir(tmp, modelDir)
             _state.value = if (isInstalled()) ModelState.Ready else ModelState.Failed("Model unpack failed")
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
+            modelDir.deleteRecursively() // don't leave a half-unpacked model
             _state.value = ModelState.Failed(e.message ?: "Download failed")
         } finally {
             tmp.delete()
+            downloading.set(false)
         }
     }
 
