@@ -45,6 +45,7 @@ import com.wird.feature.recitation.align.WordStatus
 @Composable
 fun RecitationRoute(
     onBack: () -> Unit,
+    onOpenFollow: () -> Unit,
     viewModel: RecitationViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -54,6 +55,7 @@ fun RecitationRoute(
         onCheck = viewModel::check,
         onPrev = viewModel::prev,
         onNext = viewModel::next,
+        onOpenFollow = onOpenFollow,
     )
 }
 
@@ -65,6 +67,7 @@ fun RecitationScreen(
     onCheck: () -> Unit,
     onPrev: () -> Unit,
     onNext: () -> Unit,
+    onOpenFollow: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -135,6 +138,10 @@ fun RecitationScreen(
                 OutlinedButton(onClick = onNext, enabled = state.hasNext, modifier = Modifier.weight(1f)) {
                     Text("Next ayah")
                 }
+            }
+
+            OutlinedButton(onClick = onOpenFollow, modifier = Modifier.fillMaxWidth()) {
+                Text("Recite the whole surah (follow along)")
             }
         }
     }

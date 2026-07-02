@@ -17,6 +17,8 @@ interface RecitationRepository {
     suspend fun getSurahName(surahNo: Int): String
     /** Persist a checked recitation: granular per-word rows + an aggregate stumble for the heatmap. */
     suspend fun logResult(ayahId: Int, result: AlignmentResult)
+    /** Persist follow-along stumbles as (ayahId, wordPositionInAyah) pairs. */
+    suspend fun logStumbles(stumbles: List<Pair<Int, Int>>)
 }
 
 class RecitationRepositoryImpl @Inject constructor(
@@ -50,5 +52,16 @@ class RecitationRepositoryImpl @Inject constructor(
         mistakeLogDao.insertAll(rows)
         // One stumble on this ayah — lights it up in the existing Hifz mistake heatmap.
         hifzDao.logMistake(ayahId, LocalDate.now().toEpochDay())
+    }
+
+    override suspend fun logStumbles(stumbles: List<Pair<Int, Int>>) {
+        if (stumbles.isEmpty()) return
+        val now = System.currentTimeMillis()
+        val rows = stumbles.map { (ayahId, pos) ->
+            MistakeLogEntity(ayahId = ayahId, wordPosition = pos, mistakeType = MistakeType.SUBSTITUTED.name, createdAt = now)
+        }
+        mistakeLogDao.insertAll(rows)
+        val today = LocalDate.now().toEpochDay()
+        stumbles.map { it.first }.distinct().forEach { hifzDao.logMistake(it, today) }
     }
 }

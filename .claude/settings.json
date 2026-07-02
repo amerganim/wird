@@ -39,7 +39,8 @@
       "Bash(export JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\")",
       "Bash(./gradlew :app:assembleDebug -q)",
       "Bash(./gradlew :feature:recitation:testDebugUnitTest)",
-      "Bash(./gradlew :app:assembleDebug :feature:recitation:testDebugUnitTest -q)"
+      "Bash(./gradlew :app:assembleDebug :feature:recitation:testDebugUnitTest -q)",
+      "Bash(./gradlew :app:assembleDebug :feature:recitation:testDebugUnitTest)"
     ]
   }
 }

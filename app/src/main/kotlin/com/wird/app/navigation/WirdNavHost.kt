@@ -37,6 +37,7 @@ import com.wird.feature.prayer.ui.PrayerRoute
 import com.wird.feature.qibla.navigation.QiblaDestinations
 import com.wird.feature.qibla.QiblaRoute
 import com.wird.feature.recitation.navigation.RecitationDestinations
+import com.wird.feature.recitation.follow.FollowAlongRoute
 import com.wird.feature.recitation.ui.RecitationRoute
 import com.wird.feature.quran.navigation.QuranDestinations
 import com.wird.feature.quran.ui.daily.DailyRoute
@@ -191,8 +192,20 @@ fun WirdApp() {
                 arguments = listOf(
                     navArgument(RecitationDestinations.SURAH_NO_ARG) { type = NavType.IntType },
                 ),
+            ) { backStackEntry ->
+                val surahNo = backStackEntry.arguments?.getInt(RecitationDestinations.SURAH_NO_ARG) ?: 0
+                RecitationRoute(
+                    onBack = { navController.popBackStack() },
+                    onOpenFollow = { navController.navigate(RecitationDestinations.followRoute(surahNo)) },
+                )
+            }
+            composable(
+                route = RecitationDestinations.FOLLOW_ROUTE,
+                arguments = listOf(
+                    navArgument(RecitationDestinations.SURAH_NO_ARG) { type = NavType.IntType },
+                ),
             ) {
-                RecitationRoute(onBack = { navController.popBackStack() })
+                FollowAlongRoute(onBack = { navController.popBackStack() })
             }
         }
     }
