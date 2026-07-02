@@ -37,6 +37,9 @@ interface HifzRepository {
     suspend fun getMemorizedAyat(surahNo: Int): List<AyahEntity>
     suspend fun getSurahName(surahNo: Int): String
     suspend fun grade(ayahId: Int, grade: Sm2.Grade)
+    suspend fun logMistake(ayahId: Int)
+    /** ayahId -> mistake count for a surah (only ayat with at least one mistake). */
+    fun observeSurahMistakes(surahNo: Int): Flow<Map<Int, Int>>
 }
 
 class HifzRepositoryImpl @Inject constructor(
@@ -112,5 +115,14 @@ class HifzRepositoryImpl @Inject constructor(
                 lastReviewedEpochDay = today,
             ),
         )
+        // A failed recall is a trouble spot — record it for the heatmap.
+        if (grade == Sm2.Grade.AGAIN) hifzDao.logMistake(ayahId, today)
     }
+
+    override suspend fun logMistake(ayahId: Int) = hifzDao.logMistake(ayahId, today())
+
+    override fun observeSurahMistakes(surahNo: Int): Flow<Map<Int, Int>> =
+        hifzDao.observeSurahMistakes(surahNo).map { list ->
+            list.associate { it.ayahId to it.mistakes }
+        }
 }

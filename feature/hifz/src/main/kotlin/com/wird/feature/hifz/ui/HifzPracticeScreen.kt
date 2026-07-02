@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -42,10 +43,16 @@ import com.wird.core.ui.theme.ArabicAyahTextStyle
 @Composable
 fun HifzPracticeRoute(
     onBack: () -> Unit,
+    onOpenHeatmap: () -> Unit,
     viewModel: HifzPracticeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    HifzPracticeScreen(state = state, onBack = onBack, onLevelChange = viewModel::setLevel)
+    HifzPracticeScreen(
+        state = state,
+        onBack = onBack,
+        onLevelChange = viewModel::setLevel,
+        onOpenHeatmap = onOpenHeatmap,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -54,6 +61,7 @@ fun HifzPracticeScreen(
     state: PracticeUiState,
     onBack: () -> Unit,
     onLevelChange: (BlankLevel) -> Unit,
+    onOpenHeatmap: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -62,6 +70,11 @@ fun HifzPracticeScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onOpenHeatmap) {
+                        Icon(Icons.Default.GridView, contentDescription = "Trouble spots")
                     }
                 },
             )

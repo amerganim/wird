@@ -10,4 +10,7 @@ object HifzDestinations {
 
     const val TIKRAR_ROUTE = "hifz/tikrar/{$SURAH_NO_ARG}"
     fun tikrarRoute(surahNo: Int): String = "hifz/tikrar/$surahNo"
+
+    const val HEATMAP_ROUTE = "hifz/heatmap/{$SURAH_NO_ARG}"
+    fun heatmapRoute(surahNo: Int): String = "hifz/heatmap/$surahNo"
 }

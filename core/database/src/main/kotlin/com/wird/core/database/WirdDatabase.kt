@@ -13,6 +13,7 @@ import com.wird.core.database.entity.BookmarkEntity
 import com.wird.core.database.entity.HifzItemEntity
 import com.wird.core.database.entity.KhatmPlanEntity
 import com.wird.core.database.entity.LastPositionEntity
+import com.wird.core.database.entity.MistakeStatEntity
 import com.wird.core.database.entity.SurahEntity
 
 @Database(
@@ -23,8 +24,9 @@ import com.wird.core.database.entity.SurahEntity
         BookmarkEntity::class,
         HifzItemEntity::class,
         KhatmPlanEntity::class,
+        MistakeStatEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class WirdDatabase : RoomDatabase() {

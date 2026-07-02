@@ -27,6 +27,7 @@ import androidx.navigation.navArgument
 import com.wird.feature.alarm.navigation.AlarmDestinations
 import com.wird.feature.alarm.ui.AlarmRoute
 import com.wird.feature.hifz.navigation.HifzDestinations
+import com.wird.feature.hifz.ui.HifzHeatmapRoute
 import com.wird.feature.hifz.ui.HifzPracticeRoute
 import com.wird.feature.hifz.ui.HifzReviewRoute
 import com.wird.feature.hifz.ui.HifzRoute
@@ -159,8 +160,12 @@ fun WirdApp() {
                 arguments = listOf(
                     navArgument(HifzDestinations.SURAH_NO_ARG) { type = NavType.IntType },
                 ),
-            ) {
-                HifzPracticeRoute(onBack = { navController.popBackStack() })
+            ) { backStackEntry ->
+                val surahNo = backStackEntry.arguments?.getInt(HifzDestinations.SURAH_NO_ARG) ?: 0
+                HifzPracticeRoute(
+                    onBack = { navController.popBackStack() },
+                    onOpenHeatmap = { navController.navigate(HifzDestinations.heatmapRoute(surahNo)) },
+                )
             }
             composable(
                 route = HifzDestinations.TIKRAR_ROUTE,
@@ -169,6 +174,14 @@ fun WirdApp() {
                 ),
             ) {
                 TikrarRoute(onBack = { navController.popBackStack() })
+            }
+            composable(
+                route = HifzDestinations.HEATMAP_ROUTE,
+                arguments = listOf(
+                    navArgument(HifzDestinations.SURAH_NO_ARG) { type = NavType.IntType },
+                ),
+            ) {
+                HifzHeatmapRoute(onBack = { navController.popBackStack() })
             }
         }
     }

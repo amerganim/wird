@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 /** How many ayat of a surah are under memorization. */
 data class SurahHifzCount(val surahNo: Int, val count: Int)
 
+/** Mistake count for one ayah, for the heatmap. */
+data class AyahMistakeCount(val ayahId: Int, val ayahNo: Int, val mistakes: Int)
+
 @Dao
 interface HifzDao {
 
@@ -39,6 +42,19 @@ interface HifzDao {
             "WHERE a.surahNo = :surahNo ORDER BY a.ayahNo",
     )
     suspend fun getMemorizedAyahsInSurah(surahNo: Int): List<AyahEntity>
+
+    @Query(
+        "INSERT INTO mistake_stat(ayahId, mistakes, lastEpochDay) VALUES(:ayahId, 1, :epochDay) " +
+            "ON CONFLICT(ayahId) DO UPDATE SET mistakes = mistakes + 1, lastEpochDay = :epochDay",
+    )
+    suspend fun logMistake(ayahId: Int, epochDay: Long)
+
+    @Query(
+        "SELECT m.ayahId AS ayahId, a.ayahNo AS ayahNo, m.mistakes AS mistakes " +
+            "FROM mistake_stat m JOIN ayah a ON a.id = m.ayahId " +
+            "WHERE a.surahNo = :surahNo ORDER BY a.ayahNo",
+    )
+    fun observeSurahMistakes(surahNo: Int): Flow<List<AyahMistakeCount>>
 
     @Upsert
     suspend fun upsert(item: HifzItemEntity)
