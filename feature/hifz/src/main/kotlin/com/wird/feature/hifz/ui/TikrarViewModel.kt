@@ -14,6 +14,8 @@ import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.wird.core.database.entity.AyahEntity
+import com.wird.feature.hifz.audio.AudioDownloadStore
+import com.wird.feature.hifz.audio.AudioDownloader
 import com.wird.feature.hifz.audio.AyahAudio
 import com.wird.feature.hifz.data.HifzRepository
 import com.wird.feature.hifz.navigation.HifzDestinations
@@ -22,8 +24,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+enum class DownloadStatus { NONE, DOWNLOADING, DONE }
 
 /** Tikrar = repetition. Play a surah's memorized ayat, repeating each N times and looping. */
 data class TikrarUiState(
@@ -35,6 +40,8 @@ data class TikrarUiState(
     val currentAyahId: Int? = null,
     val repeatEach: Int = 3,
     val speed: Float = 1f,
+    val download: DownloadStatus = DownloadStatus.NONE,
+    val downloadProgress: Float = 0f,
     val loading: Boolean = true,
 )
 
@@ -44,6 +51,8 @@ class TikrarViewModel @Inject constructor(
     @ApplicationContext context: Context,
     savedStateHandle: SavedStateHandle,
     private val repository: HifzRepository,
+    private val downloader: AudioDownloader,
+    private val downloadStore: AudioDownloadStore,
     cache: Cache,
 ) : ViewModel() {
 
@@ -87,8 +96,34 @@ class TikrarViewModel @Inject constructor(
         viewModelScope.launch {
             val ayat = repository.getMemorizedAyat(surahNo)
             val name = repository.getSurahName(surahNo)
-            _state.value = _state.value.copy(surahName = name, ayat = ayat, loading = false)
+            val alreadyDownloaded = downloadStore.downloadedSurahs.first().contains(surahNo)
+            _state.value = _state.value.copy(
+                surahName = name,
+                ayat = ayat,
+                loading = false,
+                download = if (alreadyDownloaded) DownloadStatus.DONE else DownloadStatus.NONE,
+            )
             rebuildPlaylist()
+        }
+    }
+
+    fun downloadForOffline() {
+        if (_state.value.download == DownloadStatus.DOWNLOADING) return
+        val urls = _state.value.ayat.map { AyahAudio.url(it.surahNo, it.ayahNo) }
+        if (urls.isEmpty()) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(download = DownloadStatus.DOWNLOADING, downloadProgress = 0f)
+            runCatching {
+                downloader.download(urls) { done, total ->
+                    _state.value = _state.value.copy(downloadProgress = done.toFloat() / total)
+                }
+            }.onSuccess {
+                downloadStore.markDownloaded(surahNo)
+                _state.value = _state.value.copy(download = DownloadStatus.DONE, downloadProgress = 1f)
+            }.onFailure {
+                // Leave partial files cached; let the user retry.
+                _state.value = _state.value.copy(download = DownloadStatus.NONE)
+            }
         }
     }
 

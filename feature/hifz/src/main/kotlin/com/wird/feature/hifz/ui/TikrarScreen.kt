@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
@@ -59,6 +61,7 @@ fun TikrarRoute(
         onRepeatChange = viewModel::setRepeatEach,
         onSpeedChange = viewModel::setSpeed,
         onAyahClick = viewModel::jumpTo,
+        onDownload = viewModel::downloadForOffline,
     )
 }
 
@@ -73,6 +76,7 @@ fun TikrarScreen(
     onRepeatChange: (Int) -> Unit,
     onSpeedChange: (Float) -> Unit,
     onAyahClick: (Int) -> Unit,
+    onDownload: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -82,6 +86,13 @@ fun TikrarScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    DownloadAction(
+                        status = state.download,
+                        progress = state.downloadProgress,
+                        onDownload = onDownload,
+                    )
                 },
             )
         },
@@ -109,6 +120,35 @@ fun TikrarScreen(
                     HorizontalDivider()
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DownloadAction(status: DownloadStatus, progress: Float, onDownload: () -> Unit) {
+    when (status) {
+        DownloadStatus.NONE -> IconButton(onClick = onDownload) {
+            Icon(Icons.Default.Download, contentDescription = "Download for offline")
+        }
+        DownloadStatus.DOWNLOADING -> Box(
+            Modifier.size(48.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp,
+            )
+        }
+        DownloadStatus.DONE -> Box(
+            Modifier.size(48.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Default.CloudDone,
+                contentDescription = "Downloaded for offline",
+                tint = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }
