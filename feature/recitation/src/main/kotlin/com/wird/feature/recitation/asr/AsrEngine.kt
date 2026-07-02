@@ -1,9 +1,10 @@
 package com.wird.feature.recitation.asr
 
 /**
- * Speech-to-text seam for recitation. Kept deliberately small so the real on-device
- * engine (Vosk Arabic, pending the accuracy spike + on-device/cloud decision gate)
- * drops in without touching the alignment pipeline.
+ * Speech-to-text seam for recitation. Kept deliberately small so a real recognizer
+ * (a Quran-tuned on-device model, or a cloud engine behind explicit opt-in) can drop
+ * in without touching the alignment pipeline. A plain Arabic model (e.g. Vosk MGB-2)
+ * proved unusable on Quranic recitation, so no real engine is wired yet.
  *
  * [expectedAyah] is passed through because a constrained recognizer can legitimately
  * use the known transcript as a decoding prior; the simulated engine uses it to

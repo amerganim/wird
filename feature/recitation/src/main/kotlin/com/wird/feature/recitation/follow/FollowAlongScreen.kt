@@ -1,9 +1,5 @@
 package com.wird.feature.recitation.follow
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,14 +16,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wird.core.ui.theme.ArabicAyahTextStyle
-import com.wird.feature.recitation.vosk.ModelState
 
 @Composable
 fun FollowAlongRoute(
@@ -57,34 +48,7 @@ fun FollowAlongRoute(
     viewModel: FollowAlongViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-        val granted = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
-            PackageManager.PERMISSION_GRANTED
-        viewModel.setAudioGranted(granted)
-    }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        viewModel.setAudioGranted(granted)
-        viewModel.toggle() // start regardless — real if granted, simulated otherwise
-    }
-
-    FollowAlongScreen(
-        state = state,
-        onBack = onBack,
-        onToggle = {
-            when {
-                state.listening -> viewModel.toggle()
-                state.modelReady && !state.audioGranted ->
-                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                else -> viewModel.toggle()
-            }
-        },
-        onDownloadModel = viewModel::downloadModel,
-    )
+    FollowAlongScreen(state = state, onBack = onBack, onToggle = viewModel::toggle)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,7 +57,6 @@ fun FollowAlongScreen(
     state: FollowAlongUiState,
     onBack: () -> Unit,
     onToggle: () -> Unit,
-    onDownloadModel: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -126,8 +89,7 @@ fun FollowAlongScreen(
             return@Scaffold
         }
         Column(Modifier.padding(innerPadding).fillMaxSize()) {
-            if (!state.canUseReal) PrototypeBanner()
-            ModelCard(state, onDownloadModel)
+            if (state.isSimulated) PrototypeBanner()
             StatusBar(state)
             SurahBody(state)
         }
@@ -138,46 +100,11 @@ fun FollowAlongScreen(
 private fun PrototypeBanner() {
     Surface(color = MaterialTheme.colorScheme.tertiaryContainer, modifier = Modifier.fillMaxWidth()) {
         Text(
-            "Listening is simulated until the on-device Arabic model is downloaded below.",
+            "Prototype: listening is simulated — real speech recognition isn't wired yet.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
         )
-    }
-}
-
-@Composable
-private fun ModelCard(state: FollowAlongUiState, onDownloadModel: () -> Unit) {
-    // Once real recognition is available there's nothing to show.
-    if (state.canUseReal) return
-    OutlinedCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("On-device recognition", style = MaterialTheme.typography.titleSmall)
-            when (val ms = state.modelState) {
-                ModelState.NotDownloaded -> {
-                    Text(
-                        "Download the offline Arabic voice model (~300 MB) for real recitation " +
-                            "recognition. It runs fully on-device afterwards.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Button(onClick = onDownloadModel) { Text("Download model") }
-                }
-                is ModelState.Downloading -> {
-                    Text("Downloading… ${(ms.fraction * 100).toInt()}%", style = MaterialTheme.typography.bodySmall)
-                    LinearProgressIndicator(progress = { ms.fraction }, modifier = Modifier.fillMaxWidth())
-                }
-                ModelState.Ready -> Text(
-                    "Model ready. Tap start and grant the microphone to recite.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                is ModelState.Failed -> {
-                    Text("Download failed: ${ms.message}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                    Button(onClick = onDownloadModel) { Text("Retry") }
-                }
-            }
-        }
     }
 }
 

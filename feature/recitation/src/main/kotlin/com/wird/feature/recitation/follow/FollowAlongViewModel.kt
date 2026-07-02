@@ -6,11 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.wird.feature.recitation.data.RecitationRepository
 import com.wird.feature.recitation.navigation.RecitationDestinations
 import com.wird.feature.recitation.recognizer.RecitationRecognizer
-import com.wird.feature.recitation.recognizer.SimulatedRecitationRecognizer
 import com.wird.feature.recitation.text.RecitationText
-import com.wird.feature.recitation.vosk.ModelState
-import com.wird.feature.recitation.vosk.VoskModelManager
-import com.wird.feature.recitation.vosk.VoskRecitationRecognizer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,34 +29,28 @@ data class FollowAlongUiState(
     val words: List<FollowWord> = emptyList(),
     val engineName: String = "",
     val isSimulated: Boolean = true,
-    val modelState: ModelState = ModelState.NotDownloaded,
-    val audioGranted: Boolean = false,
     val listening: Boolean = false,
     val cursor: Int = 0,
     val stuck: Boolean = false,
     val stuckHeard: String? = null,
     val complete: Boolean = false,
-    val error: String? = null,
     val loading: Boolean = true,
 ) {
     val expectedNextWord: String? get() = words.getOrNull(cursor)?.display
-    val modelReady: Boolean get() = modelState is ModelState.Ready
-    /** Real recognition is used only once the model is present and mic permission granted. */
-    val canUseReal: Boolean get() = modelReady && audioGranted
 }
 
 @HiltViewModel
 class FollowAlongViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: RecitationRepository,
-    private val simulated: SimulatedRecitationRecognizer,
-    private val vosk: VoskRecitationRecognizer,
-    private val modelManager: VoskModelManager,
+    private val recognizer: RecitationRecognizer,
 ) : ViewModel() {
 
     private val surahNo: Int = checkNotNull(savedStateHandle[RecitationDestinations.SURAH_NO_ARG])
 
-    private val _state = MutableStateFlow(FollowAlongUiState())
+    private val _state = MutableStateFlow(
+        FollowAlongUiState(engineName = recognizer.displayName, isSimulated = recognizer.isSimulated),
+    )
     val state: StateFlow<FollowAlongUiState> = _state.asStateFlow()
 
     private var tracker: FollowAlongTracker = FollowAlongTracker(emptyList())
@@ -85,16 +75,6 @@ class FollowAlongViewModel @Inject constructor(
             expectedText = words.joinToString(" ") { it.display }
             _state.update { it.copy(surahName = name, words = words, loading = false) }
         }
-        viewModelScope.launch {
-            modelManager.state.collect { ms -> _state.update { it.copy(modelState = ms) } }
-        }
-    }
-
-    fun setAudioGranted(granted: Boolean) = _state.update { it.copy(audioGranted = granted) }
-
-    fun downloadModel() {
-        // Runs in a foreground service so it survives the app being minimized.
-        modelManager.startDownload()
     }
 
     fun toggle() {
@@ -103,19 +83,9 @@ class FollowAlongViewModel @Inject constructor(
 
     private fun start() {
         if (_state.value.words.isEmpty()) return
-        val recognizer: RecitationRecognizer = if (_state.value.canUseReal) vosk else simulated
         stuckPositions.clear()
         _state.update {
-            it.copy(
-                listening = true,
-                engineName = recognizer.displayName,
-                isSimulated = recognizer.isSimulated,
-                cursor = 0,
-                stuck = false,
-                stuckHeard = null,
-                complete = false,
-                error = null,
-            )
+            it.copy(listening = true, cursor = 0, stuck = false, stuckHeard = null, complete = false)
         }
         listenJob = viewModelScope.launch {
             try {
@@ -129,8 +99,6 @@ class FollowAlongViewModel @Inject constructor(
                     }
                     if (complete) return@collect
                 }
-            } catch (e: Exception) {
-                _state.update { it.copy(error = e.message ?: "Recognition failed") }
             } finally {
                 _state.update { it.copy(listening = false) }
                 logStumbles()
