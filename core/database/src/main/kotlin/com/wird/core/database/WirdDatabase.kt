@@ -7,12 +7,14 @@ import com.wird.core.database.dao.BookmarkDao
 import com.wird.core.database.dao.HifzDao
 import com.wird.core.database.dao.KhatmDao
 import com.wird.core.database.dao.LastPositionDao
+import com.wird.core.database.dao.MistakeLogDao
 import com.wird.core.database.dao.SurahDao
 import com.wird.core.database.entity.AyahEntity
 import com.wird.core.database.entity.BookmarkEntity
 import com.wird.core.database.entity.HifzItemEntity
 import com.wird.core.database.entity.KhatmPlanEntity
 import com.wird.core.database.entity.LastPositionEntity
+import com.wird.core.database.entity.MistakeLogEntity
 import com.wird.core.database.entity.MistakeStatEntity
 import com.wird.core.database.entity.SurahEntity
 
@@ -25,8 +27,9 @@ import com.wird.core.database.entity.SurahEntity
         HifzItemEntity::class,
         KhatmPlanEntity::class,
         MistakeStatEntity::class,
+        MistakeLogEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class WirdDatabase : RoomDatabase() {
@@ -36,6 +39,7 @@ abstract class WirdDatabase : RoomDatabase() {
     abstract fun bookmarkDao(): BookmarkDao
     abstract fun hifzDao(): HifzDao
     abstract fun khatmDao(): KhatmDao
+    abstract fun mistakeLogDao(): MistakeLogDao
 
     companion object {
         const val DATABASE_NAME = "wird.db"

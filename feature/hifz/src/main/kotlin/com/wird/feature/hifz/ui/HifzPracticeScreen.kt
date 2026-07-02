@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -44,6 +45,7 @@ import com.wird.core.ui.theme.ArabicAyahTextStyle
 fun HifzPracticeRoute(
     onBack: () -> Unit,
     onOpenHeatmap: () -> Unit,
+    onOpenRecitation: () -> Unit,
     viewModel: HifzPracticeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -52,6 +54,7 @@ fun HifzPracticeRoute(
         onBack = onBack,
         onLevelChange = viewModel::setLevel,
         onOpenHeatmap = onOpenHeatmap,
+        onOpenRecitation = onOpenRecitation,
     )
 }
 
@@ -62,6 +65,7 @@ fun HifzPracticeScreen(
     onBack: () -> Unit,
     onLevelChange: (BlankLevel) -> Unit,
     onOpenHeatmap: () -> Unit,
+    onOpenRecitation: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -73,6 +77,9 @@ fun HifzPracticeScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onOpenRecitation) {
+                        Icon(Icons.Default.Mic, contentDescription = "Check recitation")
+                    }
                     IconButton(onClick = onOpenHeatmap) {
                         Icon(Icons.Default.GridView, contentDescription = "Trouble spots")
                     }

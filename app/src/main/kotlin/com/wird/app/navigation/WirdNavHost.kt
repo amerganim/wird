@@ -36,6 +36,8 @@ import com.wird.feature.prayer.navigation.PrayerDestinations
 import com.wird.feature.prayer.ui.PrayerRoute
 import com.wird.feature.qibla.navigation.QiblaDestinations
 import com.wird.feature.qibla.QiblaRoute
+import com.wird.feature.recitation.navigation.RecitationDestinations
+import com.wird.feature.recitation.ui.RecitationRoute
 import com.wird.feature.quran.navigation.QuranDestinations
 import com.wird.feature.quran.ui.daily.DailyRoute
 import com.wird.feature.quran.ui.khatm.KhatmRoute
@@ -165,6 +167,7 @@ fun WirdApp() {
                 HifzPracticeRoute(
                     onBack = { navController.popBackStack() },
                     onOpenHeatmap = { navController.navigate(HifzDestinations.heatmapRoute(surahNo)) },
+                    onOpenRecitation = { navController.navigate(RecitationDestinations.route(surahNo)) },
                 )
             }
             composable(
@@ -182,6 +185,14 @@ fun WirdApp() {
                 ),
             ) {
                 HifzHeatmapRoute(onBack = { navController.popBackStack() })
+            }
+            composable(
+                route = RecitationDestinations.ROUTE,
+                arguments = listOf(
+                    navArgument(RecitationDestinations.SURAH_NO_ARG) { type = NavType.IntType },
+                ),
+            ) {
+                RecitationRoute(onBack = { navController.popBackStack() })
             }
         }
     }

@@ -37,7 +37,9 @@
       "Bash(rm -f build_qiblaar.log)",
       "Bash(rm -f build_practice.log build_practice2.log)",
       "Bash(export JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\")",
-      "Bash(./gradlew :app:assembleDebug -q)"
+      "Bash(./gradlew :app:assembleDebug -q)",
+      "Bash(./gradlew :feature:recitation:testDebugUnitTest)",
+      "Bash(./gradlew :app:assembleDebug :feature:recitation:testDebugUnitTest -q)"
     ]
   }
 }

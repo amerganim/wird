@@ -36,6 +36,7 @@ dependencies {
     implementation(project(":feature:alarm"))
     implementation(project(":feature:hifz"))
     implementation(project(":feature:qibla"))
+    implementation(project(":feature:recitation"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
