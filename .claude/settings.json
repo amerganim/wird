@@ -40,7 +40,10 @@
       "Bash(./gradlew :app:assembleDebug -q)",
       "Bash(./gradlew :feature:recitation:testDebugUnitTest)",
       "Bash(./gradlew :app:assembleDebug :feature:recitation:testDebugUnitTest -q)",
-      "Bash(./gradlew :app:assembleDebug :feature:recitation:testDebugUnitTest)"
+      "Bash(./gradlew :app:assembleDebug :feature:recitation:testDebugUnitTest)",
+      "Bash(./gradlew :feature:recitation:dependencies --configuration debugRuntimeClasspath)",
+      "Bash(echo \"EXIT $?\")",
+      "Bash(./gradlew :app:assembleDebug)"
     ]
   }
 }

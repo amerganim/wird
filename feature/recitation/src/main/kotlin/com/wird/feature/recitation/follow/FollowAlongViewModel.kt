@@ -6,12 +6,17 @@ import androidx.lifecycle.viewModelScope
 import com.wird.feature.recitation.data.RecitationRepository
 import com.wird.feature.recitation.navigation.RecitationDestinations
 import com.wird.feature.recitation.recognizer.RecitationRecognizer
+import com.wird.feature.recitation.recognizer.SimulatedRecitationRecognizer
 import com.wird.feature.recitation.text.RecitationText
+import com.wird.feature.recitation.vosk.ModelState
+import com.wird.feature.recitation.vosk.VoskModelManager
+import com.wird.feature.recitation.vosk.VoskRecitationRecognizer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,28 +33,34 @@ data class FollowAlongUiState(
     val words: List<FollowWord> = emptyList(),
     val engineName: String = "",
     val isSimulated: Boolean = true,
+    val modelState: ModelState = ModelState.NotDownloaded,
+    val audioGranted: Boolean = false,
     val listening: Boolean = false,
     val cursor: Int = 0,
     val stuck: Boolean = false,
     val stuckHeard: String? = null,
     val complete: Boolean = false,
+    val error: String? = null,
     val loading: Boolean = true,
 ) {
     val expectedNextWord: String? get() = words.getOrNull(cursor)?.display
+    val modelReady: Boolean get() = modelState is ModelState.Ready
+    /** Real recognition is used only once the model is present and mic permission granted. */
+    val canUseReal: Boolean get() = modelReady && audioGranted
 }
 
 @HiltViewModel
 class FollowAlongViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: RecitationRepository,
-    private val recognizer: RecitationRecognizer,
+    private val simulated: SimulatedRecitationRecognizer,
+    private val vosk: VoskRecitationRecognizer,
+    private val modelManager: VoskModelManager,
 ) : ViewModel() {
 
     private val surahNo: Int = checkNotNull(savedStateHandle[RecitationDestinations.SURAH_NO_ARG])
 
-    private val _state = MutableStateFlow(
-        FollowAlongUiState(engineName = recognizer.displayName, isSimulated = recognizer.isSimulated),
-    )
+    private val _state = MutableStateFlow(FollowAlongUiState())
     val state: StateFlow<FollowAlongUiState> = _state.asStateFlow()
 
     private var tracker: FollowAlongTracker = FollowAlongTracker(emptyList())
@@ -72,8 +83,17 @@ class FollowAlongViewModel @Inject constructor(
             }
             tracker = FollowAlongTracker(words.map { RecitationText.normalizeWord(it.display) })
             expectedText = words.joinToString(" ") { it.display }
-            _state.value = _state.value.copy(surahName = name, words = words, loading = false)
+            _state.update { it.copy(surahName = name, words = words, loading = false) }
         }
+        viewModelScope.launch {
+            modelManager.state.collect { ms -> _state.update { it.copy(modelState = ms) } }
+        }
+    }
+
+    fun setAudioGranted(granted: Boolean) = _state.update { it.copy(audioGranted = granted) }
+
+    fun downloadModel() {
+        viewModelScope.launch { modelManager.download() }
     }
 
     fun toggle() {
@@ -82,8 +102,20 @@ class FollowAlongViewModel @Inject constructor(
 
     private fun start() {
         if (_state.value.words.isEmpty()) return
+        val recognizer: RecitationRecognizer = if (_state.value.canUseReal) vosk else simulated
         stuckPositions.clear()
-        _state.value = _state.value.copy(listening = true, cursor = 0, stuck = false, stuckHeard = null, complete = false)
+        _state.update {
+            it.copy(
+                listening = true,
+                engineName = recognizer.displayName,
+                isSimulated = recognizer.isSimulated,
+                cursor = 0,
+                stuck = false,
+                stuckHeard = null,
+                complete = false,
+                error = null,
+            )
+        }
         listenJob = viewModelScope.launch {
             try {
                 recognizer.transcripts(expectedText).collect { transcript ->
@@ -91,16 +123,15 @@ class FollowAlongViewModel @Inject constructor(
                     val st = tracker.match(recognized)
                     if (st.stuck) stuckPositions.add(st.cursor)
                     val complete = st.isComplete(tracker.size)
-                    _state.value = _state.value.copy(
-                        cursor = st.cursor,
-                        stuck = st.stuck,
-                        stuckHeard = st.stuckHeard,
-                        complete = complete,
-                    )
+                    _state.update {
+                        it.copy(cursor = st.cursor, stuck = st.stuck, stuckHeard = st.stuckHeard, complete = complete)
+                    }
                     if (complete) return@collect
                 }
+            } catch (e: Exception) {
+                _state.update { it.copy(error = e.message ?: "Recognition failed") }
             } finally {
-                _state.value = _state.value.copy(listening = false)
+                _state.update { it.copy(listening = false) }
                 logStumbles()
             }
         }
@@ -109,7 +140,7 @@ class FollowAlongViewModel @Inject constructor(
     private fun stop() {
         listenJob?.cancel()
         listenJob = null
-        _state.value = _state.value.copy(listening = false)
+        _state.update { it.copy(listening = false) }
     }
 
     private suspend fun logStumbles() {
